@@ -11,6 +11,34 @@ from typing import Literal, Optional
 
 from ..envelope import from_result, make_error
 from ..transport import READ, NON_IDEMPOTENT
+from .. import catalog
+
+
+def _with_graph_type_hint(payload: str, graph_type: str) -> str:
+    """graph_type起因の失敗に、カタログ由来の近似候補ヒントを付け直す。"""
+    return _rehint(payload, catalog.graph_type_hint(graph_type),
+                   "グラフタイプ")
+
+
+def _with_bus_effect_hint(payload: str, effect_name: str) -> str:
+    """バスエフェクト名起因の失敗に、カタログ由来の近似候補ヒントを付け直す。"""
+    return _rehint(payload, catalog.bus_effect_hint(effect_name),
+                   "バスエフェクト")
+
+
+def _rehint(payload: str, hint: str, marker: str) -> str:
+    """失敗封筒のうち、messageにmarkerを含むものだけhintを差し替える。"""
+    import json
+    try:
+        data = json.loads(payload)
+    except (ValueError, TypeError):
+        return payload
+    if data.get("success") is not False:
+        return payload
+    if marker not in (data.get("error") or ""):
+        return payload
+    data["hint"] = hint
+    return json.dumps(data, ensure_ascii=False)
 
 BusmapAction = Literal[
     "create_for_cue", "get_for_cue", "create_custom", "get_custom", "get_for_aisac",
@@ -94,6 +122,12 @@ def make_tools(t):
           - add_point: ポイント追加 (aisac_graph, control_value, destination_value必須)
           - create_link: AISACリンク作成 (parent, aisac必須)
           - get_graph: グラフ取得 (aisac, graph_type必須)
+
+        graph_type: グラフ種別名。代表値は Volume, Pitch, Priority, PlaybackRate,
+          PanAngle, PanVolume, PanWideness, PanSpread, BiquadFreq, BiquadQ,
+          BusSendLevel1〜8, AisacControl0〜15(全43種)。誤った値には近似候補を
+          添えたエラーが返る。全一覧はCRI公式オブジェクトリファレンスの
+          「AISACグラフ・オートメーション…の種類と名前」節を参照。
         """
         if action == "create":
             if not parent or not object_name or not aisac_control:
@@ -138,7 +172,10 @@ def make_tools(t):
                 f"Unknown action: {action}. Valid actions: {', '.join(AisacAction.__args__)}",
                 "INVALID_PARAMS")
 
-        return from_result(result)
+        payload = from_result(result)
+        if graph_type and action in ("create_graph", "get_graph"):
+            payload = _with_graph_type_hint(payload, graph_type)
+        return payload
 
     def atomcraft_setup_automation(
         action: AutomationAction,
@@ -154,6 +191,15 @@ def make_tools(t):
           - create: オートメーション作成 (parent, graph_type必須)
           - add_point: ポイント追加 (automation, time_ms, destination_value必須)
           - get: 既存オートメーション取得 (parent, graph_type必須)
+
+        parent: TrackやCue等、オートメーションを持たせる対象のUUID。
+        graph_type: グラフ種別名。代表値は Volume, Pitch, Priority, PlaybackRate,
+          PanAngle, PanVolume, PanWideness, PanSpread, BiquadFreq, BiquadQ,
+          BusSendLevel1〜8, AisacControl0〜15(全43種)。誤った値には近似候補を
+          添えたエラーが返る。全一覧はCRI公式オブジェクトリファレンス参照。
+
+        なお `Automation` 型は汎用検索(atomcraft_get_object)では引けず、
+        このツールの action='get' が唯一の取得経路。
         """
         if action == "create":
             if not parent or not graph_type:
@@ -182,7 +228,10 @@ def make_tools(t):
                 f"Unknown action: {action}. Valid actions: {', '.join(AutomationAction.__args__)}",
                 "INVALID_PARAMS")
 
-        return from_result(result)
+        payload = from_result(result)
+        if graph_type and action in ("create", "get"):
+            payload = _with_graph_type_hint(payload, graph_type)
+        return payload
 
     def atomcraft_setup_mixer(
         action: MixerAction,
@@ -272,7 +321,10 @@ def make_tools(t):
                 f"Unknown action: {action}. Valid actions: {', '.join(MixerAction.__args__)}",
                 "INVALID_PARAMS")
 
-        return from_result(result)
+        payload = from_result(result)
+        if bus_effect_name and action in ("get_bus_effect", "copy_bus_effect"):
+            payload = _with_bus_effect_hint(payload, bus_effect_name)
+        return payload
 
     return [
         atomcraft_manage_busmap,

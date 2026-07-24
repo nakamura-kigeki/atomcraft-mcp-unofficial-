@@ -78,7 +78,8 @@ def test_all_fields_invalid_returns_error_with_catalog_hint(tools):
     r = json.loads(fns["atomcraft_get_property"](target="u1", fields=["Pan", "Categn"]))
     assert r["success"] is False
     assert r["code"] == "INVALID_FIELD"
-    assert "CuePriority" in r["hint"]  # Cueの有効フィールド一覧を提示
+    assert "CueID" in r["hint"]  # Cueの有効フィールド一覧を提示(先頭12件までに切り詰め)
+    assert "ほか" in r["hint"]  # 切り詰めた残数を伝える
 
 
 def test_single_field_success(tools):
@@ -96,7 +97,7 @@ def test_single_field_invalid_returns_error_with_catalog_hint(tools):
     r = json.loads(fns["atomcraft_get_property"](target="u1", fields=["Pan"]))
     assert r["success"] is False
     assert r["code"] == "INVALID_FIELD"
-    assert "CuePriority" in r["hint"]
+    assert "CueID" in r["hint"]
 
 
 def test_use_actual_value_partial_success(tools):

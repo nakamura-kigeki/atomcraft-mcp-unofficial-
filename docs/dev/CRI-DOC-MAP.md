@@ -36,7 +36,9 @@ URLは2026-07時点で到達確認したものです。サイト構造は将来�
 | CRI Atom Craft(ツールマニュアル、GUI操作全般) | `adx2_tool/latest/criatom_tools_atomcraft_about.html`(英語版は `adx2_tool_en/...`) |
 | Atom Craft ロボット(自動化API)概要 | `adx2_tool/latest/criatom_tools_atomcraft_api.html` |
 | **ロボットAPIリファレンス目次** | `adx2_tool/latest/criatom_tools_atomcraft_api_reference.html` — 本MCPサーバーが呼んでいるRobot APIの一次情報はここ |
-| **オブジェクトリファレンス(型名の一次情報)** | `adx2_tool/latest/criatom_tools_atomcraft_api_refobject.html` — `object_type` に使える**全オブジェクト型名**が節ごとに列挙されている。`catalog.py` の `OBJECT_TYPES` はこのページを出典とする(目次ページからは1階層奥にあり見落としやすいので注意) |
+| **オブジェクトリファレンス(型名・バスエフェクト名・graph_typeの一次情報)** | `adx2_tool/latest/criatom_tools_atomcraft_api_refobject.html` — `object_type` に使える**全オブジェクト型名**に加え、**「バスエフェクトの種類と名前」**(21種)と**「AISACグラフ・オートメーション・再生パラメーター設定アクションの種類と名前」**(`graph_type` 43種)の節を含む。`catalog.py` の `OBJECT_TYPES` / `BUS_EFFECT_TYPES` / `GRAPH_TYPES` はこのページを出典とする(目次ページからは1階層奥にあり、後半2節はさらに見落としやすい) |
+| **パラメーターリファレンス(フィールド名の一次情報)** | `adx2_tool/latest/criatom_tools_atomcraft_api_refparam.html`(Project/UserSettings)と、同名 + `_global` / `_workunittree` / `_aisac` / `_materialtree` の計5ページ。`get_property` / `set_property` で使うフィールド名が型ごとに列挙されている。`catalog.py` の `KNOWN_FIELDS` の出典。**見出しの `Action` / `Marker` / `InternalCueLink` は概念グルーピングであって型名ではない**点に注意 |
+| モジュールリファレンス(関数の一次情報) | `adx2_tool/latest/criatom_tools_atomcraft_api_refmodule.html` から、`..._refmodule_{project,preview,build,debug,view,error,connect,profiler}.html` の8本に分かれる |
 | CRI ADXネイティブSDK(ライブラリAPI・エラーコード) | `native/adx2/latest/` 配下。エラーは `criatom_trblsht_error.html` |
 | CRI Sofdec(ムービー再生) | `native/sofdec2/latest/index.html` |
 | CRI LipSync — Unity向け | `lipsync_v/latest/contents/about_lipsync.html` |
@@ -69,12 +71,16 @@ URLは2026-07時点で到達確認したものです。サイト構造は将来�
 - 日英はページ構成・ファイル名が同じことが多く、製品セグメントに `_en` を足すだけで
   英語版に到達できる場合がある(全ページにある保証はない)。
 
-## 4. ローカル同梱ドキュメント(オフライン代替)
+## 4. ローカル同梱ドキュメント(オフライン代替・**一覧の抽出はこちらを推奨**)
 
 CRIツールのインストールフォルダには、Webサイトと同等のマニュアルが同梱されている。
 オフライン環境ではこちらを使う。
 
-- 一般形: `<CRIツールインストール先>\cri\tools\ADX2\ver.3\docs\jpn`(英語版は `docs` 直下の別フォルダ)
+- 一般形: `<CRIツールインストール先>\cri\tools\ADX2\ver.3\docs\jpn`(英語版は `docs` 直下の別フォルダ)。
+  上記のリファレンス各ページのHTMLは `<同ツール>\manual\jpn\contents\` にある
+- **型名・フィールド名などの一覧を漏れなく取り込みたい場合は、Web版をAIに要約させるのではなく
+  このローカルHTMLを機械抽出すること**。Web要約は同一ページでも件数が揺れる(実測で
+  「38件/31件/38件列挙して合計36件」といった不整合が出た)
 - ローカル版はインストール済みバージョンの内容を反映している。接続中のAtom Craftの
   実バージョンに対応した仕様を確認したいときは、Web版の `latest` よりローカル版のほうが
   正確な場合がある。

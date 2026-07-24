@@ -24,7 +24,7 @@
 | ツール名 | できること | 危険度 | 必要バージョン | 検証状態 |
 |---|---|---|---|---|
 | `atomcraft_debug` | ping/reconnect/status/log/warning/clear_log/get_version | ping・status・get_version=読み取り、reconnect・log・warning・clear_log=冪等書き込み | Ver.3.44.18(基本)。`get_version`が内部で使う`get_tool_version`自体はVer.3.46.04追加(それ未満は取得失敗として扱われるだけでエラーにはならない) | ping・get_versionは3.57.02実機で確認済み。他actionはユニットテストのみ |
-| `atomcraft_get_object` | find_by_name/find_all_by_type/get_by_path/get_children/get_child_by_name/get_parent/get_selected/get_root/get_global_folder/get_workunit/get_cuesheet_rootfolder/get_material_rootfolder/get_project_material_rootfolder | 読み取り | Ver.3.44.18 | get_root・find_all_by_type(Cue/Track)は3.57.02(製品版)実機で確認済み。さらにVer.3.56.01(LE版)実機でオブジェクト型名23種を find_all_by_type に全件照合済み(下記「オブジェクト型名の実機検証」節)。他methodはユニットテストのみ |
+| `atomcraft_get_object` | find_by_name/find_all_by_type/get_by_path/get_children/get_child_by_name/get_parent/get_selected/get_root/get_global_folder/get_workunit/get_cuesheet_rootfolder/get_material_rootfolder/get_project_material_rootfolder | 読み取り | Ver.3.44.18 | get_root・find_all_by_type(Cue/Track)は3.57.02(製品版)実機で確認済み。さらにオブジェクト型名96種を find_all_by_type に全件照合済み(下記「カタログの実機検証」節)。他methodはユニットテストのみ |
 | `atomcraft_create_object` | 汎用オブジェクト作成(CueSheet/Cue/Track/Bus/SelectorLabel/Category等) | 非冪等作成 | Ver.3.44.18 | ユニットテストのみ(実機未検証) |
 | `atomcraft_modify_object` | copy/duplicate/move/delete/select | copy・duplicate・move・delete=非冪等作成、select=冪等書き込み | Ver.3.44.18。ただしcopyでAISAC/オートメーションのポイント・グラフをコピーする場合、Ver.3.47.00〜Ver.3.55.02(グラフはVer.3.54.02まで)の接続先では欠落する既知不具合がツール側にある(詳細はVERSION-NOTES.md) | deleteは3.57.02実機で確認済み(beatsync検証で作成したトラックの後片付けに使用)。他actionは未検証 |
 | `atomcraft_get_property` | 単一/複数フィールドの取得、継承解決後の実効値取得(use_actual_value)、色情報の取得。無効フィールドは自動除外して部分成功を返す | 読み取り | Ver.3.44.18(use_actual_valueが呼ぶget_actual_valueはVer.3.45.00で追加) | 単一フィールド(Comment)の取得は3.57.02実機で確認済み(bulk_property set往復確認の退避・検証に使用)。use_actual_value等は未実機検証 |
@@ -37,49 +37,101 @@
 | `atomcraft_create_cue` | simple(マテリアルからキュー作成)/cuelink(既存キューへのリンク)/external_cuelink(外部キューリンク)/waveform_region(トラックへのウェーブフォームリージョン追加) | 非冪等作成 | Ver.3.44.18 | ユニットテストのみ |
 | `atomcraft_manage_bookmark` | add/remove/list | add・remove=非冪等作成、list=読み取り | Ver.3.44.18 | ユニットテストのみ |
 | `atomcraft_manage_busmap` | create_for_cue/get_for_cue/create_custom/get_custom/get_for_aisac | create系=非冪等作成、get系=読み取り | Ver.3.44.18 | ユニットテストのみ |
-| `atomcraft_setup_aisac` | create/create_graph/add_point/create_link/get_graph | create系=非冪等作成、get_graph=読み取り | Ver.3.44.18 | ユニットテストのみ |
-| `atomcraft_setup_automation` | create/add_point/get | create・add_point=非冪等作成、get=読み取り | Ver.3.44.18 | ユニットテストのみ |
+| `atomcraft_setup_aisac` | create/create_graph/add_point/create_link/get_graph | create系=非冪等作成、get_graph=読み取り | Ver.3.44.18 | ユニットテストのみ。graph_type語彙は実機で43種を照合済み(下記「カタログの実機検証」節) |
+| `atomcraft_setup_automation` | create/add_point/get | create・add_point=非冪等作成、get=読み取り | Ver.3.44.18 | **action=getは3.57.02実機で確認済み**(Trackを親にgraph_type='Volume'。`Automation`型を取得できる唯一の経路)。create/add_pointは未実機検証 |
 | `atomcraft_setup_mixer` | create_mixer/add_bus_send/remove_bus_send/get_bus_effect/copy_bus_effect/move_bus/sync_snapshot | get_bus_effect=読み取り、他は非冪等作成 | Ver.3.44.18 | ユニットテストのみ |
 | `atomcraft_build` | build(キューシートビルド)/clean_all(ビルドキャッシュ全クリーン) | **非冪等作成(ビルド/保存に相当)** | Ver.3.44.18。timeout_secで呼び出し単位のタイムアウトを上書き可能 | ユニットテストのみ。実機検証では未実行(実プロジェクトへの副作用を避けるため) |
 | `atomcraft_preview` | play/stop_all/get_playback_state/start_ingame_preview/stop_ingame_preview | play・stop_all・start/stop_ingame_preview=冪等書き込み、get_playback_state=読み取り | play・stop_allはVer.3.44.18。get_playback_state/start_ingame_preview/stop_ingame_previewはVer.3.47.0以降が必要(start/stop_ingame_previewは変更履歴に関数名明記で確定、get_playback_stateは推定・安全側で同じ下限を採用) | 3.57.02実機で play→get_playback_state→stop_all を通しで確認済み: play・stop_allは成功。**get_playback_stateはplay直後の呼び出しでもNOT_FOUNDを返した**(短いSEで既に再生終了していた可能性が高いが、「再生中」状態を実際に観測できたわけではない点は留意)。start_ingame_preview(ダミー値でのAPI_ERROR異常系)も確認済み |
 | `atomcraft_get_tree` | フォルダ階層を再帰走査し、全ノードのプロパティを一括取得。output_format=jsonは構造ツリーをそのまま返す、csvはCSV+構造JSONの2ファイル出力 | 読み取り(csv出力時はローカルディスクへのファイル書き込みを伴う) | Ver.3.44.18 | root=プロジェクトルート、child_types=["WorkUnit"]で3.57.02実機確認済み(該当0件だがAPI応答は正常)。csv出力モード・大規模ツリーでのJSON→CSV自動フォールバックは未実機検証 |
 | `atomcraft_manage_beatsync` | create_track(ビート同期トラック作成)/create(ビート同期情報作成) | 非冪等作成 | 新API、根拠は確度「推定・低め」のVer.3.45.0(関数存在チェックが実質的な防波堤) | **create_track→create→delete(点・トラック)の完全なライフサイクルを3.57.02実機で確認済み**(親オブジェクトはCueである必要がある。親がTrackだとAPI_ERROR。作成物は同一接続内ですべて削除済み) |
 
-補足: ユニットテストは `python -m pytest server/tests -q` で228件パス(2026-07-24時点)。
+補足: ユニットテストは `python -m pytest server/tests -q` で237件パス(2026-07-25時点)。
 「ユニットテストのみ」の行はfake_robotによるモック検証であり、実際のAtom Craft
 本体との通信は確認できていません。
 
-## オブジェクト型名の実機検証(Ver.3.56.01 LE版、2026-07-25)
+## カタログの実機検証(2026-07-25)
 
-オブジェクト型名の一次情報はCRI公式の**オブジェクトリファレンス**
-(`criatom_tools_atomcraft_api_refobject.html`)です。公式リスト**84件すべて**を
-Atom Craft Ver.3.56.01(CRI ADX **LE**版)実機の `find_all_by_type` に照合し、
-結果は**83件有効・`Automation` のみ拒否**でした。`catalog.py` の `OBJECT_TYPES` は
-この84件で構成しています。判定は「`INVALID_TYPE` が返るか」で行っており、
-ヒット0件でも型名が正しければ success が返るため、「存在しない型」と
-「オブジェクトが0個」は区別できています。
+本サーバーは4種の語彙カタログ(`server/atomcraft_mcp/catalog.py`)を持ちます。いずれも
+**CRI公式マニュアルのローカル同梱版から機械抽出**したうえで、実機
+**Ver.3.57.02(製品版)** に照合して確定させたものです(テスト環境からの
+Ver.3.56.01 LE版の検証結果も統合)。
 
-- **旧カタログからの主な修正履歴**:
-  - v0.2.2: `AISAC` / `AISACControl`(全大文字)→ **`Aisac` / `AisacControl`** に修正
-    (AisacControlは16件ヒット、`get_property` の `type_name` も `AisacControl`)
-  - v0.2.3: 公式84件で全面置換。旧カタログにあった **`Synth` / `MaterialFolder` は
-    不在と確定し削除**(根拠: (a) `find_objects` / `get_children` / `get_parent` の
-    3メソッドすべてで拒否 (b) 公式オブジェクトリファレンスに記載なし)。
-    また `CueSheetRootFolder`(`atomcraft_get_tree` が実際に返す `type` 値)を含む
-    60件超の取りこぼしを追加
-- **`Automation` のみ保留**: 公式リストに記載があるが、実機Ver.3.56.01(LE)では
-  `INVALID_TYPE`(3回再現。AutomationGraph / AutomationTrack も不可。子要素の
-  `AutomationPoint` は有効)。製品版・新バージョンで有効な可能性を残して
-  カタログには保持
-- **未文書の別名 `Waveform`**: `find_all_by_type('Waveform')` は受理され
-  `Material` と同一のUUID集合を返す(返却 `type_name` は `Material`)。
-  公式一覧に無いためカタログには載せていません
-- **プラットフォーム別ターゲットコンフィグ**(`TargetConfigPs4` / `XboxOne` /
-  `Switch` / `iPhone` / `Android` / `WebGl`)は型としては有効だが、LE版検証
-  プロジェクトでは0件でした(製品版プロジェクトでは存在しうる)
-- **検証の限界**: 単一プロジェクト・単一バージョン(3.56.01 LE)・
-  `find_all_by_type` 単一メソッドでの結果。ヒット0件の型は「型名が受理される」
-  ことのみの確認で、実際の取得・操作までは未検証
+出典ページ(`https://game.criware.jp/manual/adx2_tool/latest/` 配下):
+
+| カタログ | 出典 |
+|---|---|
+| オブジェクト型名 / バスエフェクト名 / graph_type | `criatom_tools_atomcraft_api_refobject.html`(1ページに3種の節がある) |
+| プロパティフィールド名 | `..._api_refparam.html` と `_global` / `_workunittree` / `_aisac` / `_materialtree` の計5ページ |
+
+### 公式ドキュメントは不完全である(重要)
+
+カタログは**「公式 ∪ 実機」**で構成する必要があります。実測した乖離:
+
+- **公式未記載だが実機が受理する型が12種**: `ParameterAction` /
+  `ParameterActionCondition` / `SpeakerSetting` / `SpeakerSettingFolder` /
+  `DspSetting` / `DspSettingFolder` / `DspBusMaster` / `BusMapRootFolder` /
+  `BusMapFolder` / `BusMapAisacGraph` / `BeatSyncLabelFolder` / `CueSheetSubFolder`
+  (3.57.02・3.56.01 LE の双方で受理を確認)
+- **公式記載の graph_type `Spread` は実機で拒否**され、実際の名前は **`PanSpread`**
+- **公式未記載のフィールド**もある(例: `Cue.CuePriority`)
+- 逆に**公式記載でも実機で引けない型**がある(`Automation`。下記)
+
+したがって「これで全件確定した」とは言えません。未発見の型・フィールドがある前提で扱ってください。
+
+### オブジェクト型名(96種)
+
+公式84種 + 未文書12種。うち `Automation` のみ `find_all_by_type` /
+`get_children` から引けませんが、**専用アクセサ経由では取得できます**
+(`atomcraft_setup_automation(action='get', parent=..., graph_type=...)`。
+実機3.57.02でTrackを親に取得成功を確認)。ルートフォルダ系が専用methodを要するのと
+同じ「汎用検索から引けない型」であり、存在しない型ではありません。
+
+**未文書エイリアス(カタログには入れない)**: 実機が受理するが別の型と同一の
+オブジェクト集合を返すもの。`catalog.OBJECT_TYPE_ALIASES` に記録のみしています。
+
+| エイリアス | 実体 | 実機3.57.02での一致 |
+|---|---|---|
+| `Waveform` | `Material` | 152件が同一UUID |
+| `AutomationPoint`(公式にある正式な型) | `AisacPoint` | 454件が同一UUID |
+| `LanguageSettingFolder`(単数) | `LanguageSettingsFolder`(複数) | 1件が同一UUID |
+
+### プロパティフィールド名(51型)
+
+公式パラメーターリファレンス5ページから抽出し、実機で型ごとに照合。
+38型は全フィールドの取得成功を確認済み(`catalog.KNOWN_FIELDS_LIVE_VERIFIED`)。
+残りは検証プロジェクトに対象オブジェクトが無く未検証です。
+
+- 公式の見出し `Action` / `Marker` / `InternalCueLink` は**概念グルーピングであって
+  型名ではありません**。実型(`ActionStart`等7種 / `LoopMarker`等5種 / `CueLink`)に
+  展開したうえで、実機でフィールドの差異まで確認しています(例: `CallbackId` は
+  `CallbackMarker` では有効、`LoopMarker` では無効)
+- `Track.PlaybackPositionBehavior` は Ver.3.56.01(LE)では `INVALID_FIELD` でしたが、
+  **Ver.3.57.02では有効**でした(バージョン差)
+
+### graph_type(43種)
+
+`atomcraft_setup_aisac(create_graph/get_graph)` と
+`atomcraft_setup_automation(create/get)` の必須引数。公式43種を実機の
+`get_automation`(読み取り)で全件照合し、42種が有効。`Spread` のみ拒否され
+`PanSpread` が正でした。無効値には「指定したグラフタイプはサポートしていません」が
+返るため、この引数は判定オラクルとして機能します。
+
+### バスエフェクト名(21種)
+
+公式21種を保持。ただし**実機では網羅判定ができません** —
+`get_bus_effect` / `get_dsp_bus_effect` は「名前が無効」と「そのバスに未装着」を
+同一メッセージで返すためです(bogus名でも同じ応答)。マスターバス上に実在を確認できた
+15種は有効と確定、残り6種(`Limiter` / `Compressor` / `32BandEQ` / `Surrounder` /
+`I3DL2Reverb` / `Matrix`)は未装着だった可能性が高く、無効と確定したわけではないため
+公式記載どおり保持しています。
+
+### 将来の作業者への警告
+
+- **WebFetchによる公式ページの要約は件数が安定しません**(同一URLで38件/31件/
+  「38件列挙して合計36件」等の揺れを実測)。CRIツールのインストールフォルダに同梱の
+  `manual/jpn/contents/*.html` を**機械抽出**するか、実機APIを judgment に使ってください
+- 検証は単一プロジェクト・単一バージョンでの結果です。ヒット0件の型は
+  「型名が受理される」ことのみの確認で、実際の取得・操作までは未検証です
 
 ## まだできないこと
 
