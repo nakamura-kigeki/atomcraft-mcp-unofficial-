@@ -1,51 +1,125 @@
 """有効値カタログと近似候補サジェスト。
 
-CRI Atom Craft Robot API のオブジェクトタイプ名・プロパティフィールド名は、
-コード上から静的に列挙する手段がない（サーバー側の内部定義に依存する）。
-このモジュールは、これまでの利用実績から蓄積した「既知の有効値」を
-純粋なデータテーブルとして保持し、呼び出し元LLMが typo や無効な値を
-渡した際にエラーメッセージへ付加するヒント文字列を生成する。
+オブジェクトタイプ名の一次情報はCRI公式のオブジェクトリファレンス:
+https://game.criware.jp/manual/adx2_tool/latest/criatom_tools_atomcraft_api_refobject.html
 
-ここに定義するテーブルは知見の蓄積によって拡張されていく前提であり、
-ロジック自体は単純に保つ（difflibによる近似マッチのみ）。
+OBJECT_TYPES は上記公式リスト84件を、Atom Craft Ver.3.56.01(LE版)実機の
+find_all_by_type に全件照合した結果に基づく(2026-07-25検証。83件有効・
+Automationのみ拒否。詳細は docs/dev/CAPABILITIES.md「オブジェクト型名の実機検証」)。
+
+プロパティフィールド名(KNOWN_FIELDS)は静的な公式一覧が確認できていないため、
+従来どおり利用実績からの蓄積で拡張する。ヒント生成のロジック自体は単純に保つ
+（difflibによる近似マッチのみ）。
 """
 
 from __future__ import annotations
 
 import difflib
 
-# CRI Atom Craft Robot API で扱う既知のオブジェクトタイプ一覧
+# CRI公式オブジェクトリファレンス記載の全型名(モジュールdocstringの出典参照)。
+# 実機Ver.3.56.01(LE)の find_all_by_type で全件照合済み(Automationのみ拒否)。
+# なお "Waveform" は未文書だが受理される "Material" の別名(返却type_nameはMaterial)
+# のため、このリストには載せない。
 OBJECT_TYPES: list[str] = [
+    # --- プロジェクト設定・ユーザー設定・全体設定 ---
     "Project",
-    "WorkUnit",
-    "CueSheet",
-    "CueSheetFolder",
-    "CueFolder",
-    "Cue",
-    "Track",
-    # "Synth" は実機Ver.3.56.01(LE)の find_objects では INVALID_TYPE(SubSynthも不可)。
-    # 他メソッド・製品版での有効性は未検証のため保留のまま残している。
-    "Synth",
-    "WaveformRegion",
-    "Material",
-    # "MaterialFolder" は実機Ver.3.56.01(LE)の find_objects では INVALID_TYPE
-    # (MaterialSubFolder / MaterialRootFolder は有効)。他メソッド未検証のため保留。
-    "MaterialFolder",
-    "MaterialSubFolder",
-    "MaterialRootFolder",
+    "UserSettings",
+    "GlobalFolder",
+    "TargetConfigFolder",
+    "TargetConfigPc",
+    "TargetConfigPs4",
+    "TargetConfigXboxOne",
+    "TargetConfigSwitch",
+    "TargetConfigiPhone",  # 小文字の i が正
+    "TargetConfigAndroid",
+    "TargetConfigWebGl",  # WebGL ではなく WebGl が正
+    "TargetConfigPublic",
+    "LanguageSettingsFolder",
+    "LanguageSettings",
+    "OutputPortFolder",
+    "OutputPort",
+    "VoicePoolFolder",
+    "VoicePool",
+    "MixerFolder",
+    "Mixer",
+    "MixerSnapshot",
     "Bus",
     "BusMaster",
-    "Mixer",
-    # 実機Ver.3.56.01で全23型を find_all_by_type に当てた結果、
-    # AISAC/AISACControl(全大文字)は誤りで Aisac/AisacControl が正
-    # (AisacControl は16件ヒット、get_property の type_name も AisacControl)。
-    "Aisac",
-    "AisacControl",
-    "SelectorLabel",
-    "Selector",
-    "Category",
-    "CategoryGroup",
+    "BusMap",
     "CategoryFolder",
+    "CategoryGroup",
+    "Category",
+    "GameVariableFolder",
+    "GameVariable",
+    "SelectorFolder",
+    "Selector",
+    "SelectorLabel",
+    "ReactFolder",
+    "React",
+    "VoiceLimitGroupFolder",
+    "VoiceLimitGroup",
+    "AisacControlFolder",
+    "AisacControl",
+    "GlobalAisacFolder",
+    # --- AISAC ---
+    "Aisac",
+    "AisacGraph",
+    "AisacPoint",
+    # --- ワークユニットツリー ---
+    "WorkUnitFolder",
+    "WorkUnitSubFolder",
+    "WorkUnit",
+    "ReferenceAisacFolder",
+    "CueSheetRootFolder",  # atomcraft_get_tree が返す type 値
+    "CueSheetFolder",
+    "CueSheet",
+    "CueFolder",
+    "PrivateCueFolder",
+    "Cue",
+    "LoopMarker",
+    "StartMarker",
+    "EndMarker",
+    "CallbackMarker",
+    "ReactEndMarker",
+    # "Automation" は公式リストに記載があるが、実機Ver.3.56.01(LE)では INVALID_TYPE
+    # (3回試行して再現。AutomationGraph / AutomationTrack も拒否で代替名は見つからず。
+    # 子要素の AutomationPoint は有効なため、親型のみ欠けている状態)。
+    # 製品版・新バージョンで有効な可能性を残して保持する。
+    "Automation",
+    "AutomationPoint",
+    "Track",
+    "WaveformRegion",
+    "SubSequence",
+    "CueLink",
+    "ExternalCueLink",
+    "ActionTrack",
+    "ActionStart",
+    "ActionStop",
+    "ActionPause",
+    "ActionResume",
+    "ActionMute",
+    "ActionSetPlaybackParameter",
+    "ActionSetSelectorLabel",
+    "PlayerActionTrack",
+    "ActionPlayerFader",
+    "AisacLink",
+    "Block",
+    "BeatSync",
+    "TrimmingInfo",
+    "FadeInfo",
+    "StopAction",
+    # --- マテリアルツリー ---
+    "MaterialInfo",
+    "MaterialRootFolder",
+    "MaterialSubFolder",
+    "Material",
+]
+
+# INVALID_TYPE時のヒントで、近似候補が1件も出なかった場合に示す代表例。
+_REPRESENTATIVE_TYPES: list[str] = [
+    "Project", "WorkUnit", "CueSheet", "CueSheetRootFolder", "Cue", "Track",
+    "WaveformRegion", "Material", "MaterialRootFolder", "Bus", "Mixer",
+    "Aisac", "AisacControl", "Category", "Selector",
 ]
 
 # タイプ別の既知有効プロパティフィールド一覧。
@@ -82,12 +156,23 @@ def suggest(value: str, candidates: list[str], n: int = 3) -> list[str]:
 
 
 def type_hint(bad_type: str) -> str:
-    """無効なオブジェクトタイプ名向けのヒント文字列を生成する。"""
+    """無効なオブジェクトタイプ名向けのヒント文字列を生成する。
+
+    84件の全リストをダンプするとエラーのたびに約1,300文字がhintに載って
+    LLMの文脈を浪費するため、近似候補のみを返し、候補が1件も無いときだけ
+    代表例と公式リファレンスへの誘導を示す。
+    """
     candidates = suggest(bad_type, OBJECT_TYPES)
+    if candidates:
+        return (
+            f"'{bad_type}' は利用できません。"
+            f"近い候補: {', '.join(candidates)}"
+        )
     return (
-        f"'{bad_type}' は利用できません。"
-        f"近い候補: {', '.join(candidates)}。"
-        f"有効なタイプ例: {', '.join(OBJECT_TYPES)}"
+        f"'{bad_type}' は利用できません。近い候補も見つかりませんでした。"
+        f"代表的なタイプ例: {', '.join(_REPRESENTATIVE_TYPES)}。"
+        "全一覧はCRI公式のオブジェクトリファレンス"
+        "(criatom_tools_atomcraft_api_refobject.html)を参照してください。"
     )
 
 

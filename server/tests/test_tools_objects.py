@@ -30,11 +30,11 @@ def test_find_by_name_missing_params_has_hint(tools):
 def test_invalid_type_gets_catalog_hint(tools):
     fns, fake = tools
     fake.set_handler("project", "find_objects",
-                     {"succeed": False, "message": "指定したタイプ [MaterialFolde] は現在利用できません。"})
+                     {"succeed": False, "message": "指定したタイプ [AisacControll] は現在利用できません。"})
     r = json.loads(fns["atomcraft_get_object"](method="find_all_by_type",
-                                               object_type="MaterialFolde"))
+                                               object_type="AisacControll"))
     assert r["code"] == "INVALID_TYPE"
-    assert "MaterialFolder" in r["hint"]  # 近似候補
+    assert "AisacControl" in r["hint"]  # 近似候補
 
 
 def test_list_pagination(tools):

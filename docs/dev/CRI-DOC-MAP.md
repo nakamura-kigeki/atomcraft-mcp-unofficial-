@@ -36,6 +36,7 @@ URLは2026-07時点で到達確認したものです。サイト構造は将来�
 | CRI Atom Craft(ツールマニュアル、GUI操作全般) | `adx2_tool/latest/criatom_tools_atomcraft_about.html`(英語版は `adx2_tool_en/...`) |
 | Atom Craft ロボット(自動化API)概要 | `adx2_tool/latest/criatom_tools_atomcraft_api.html` |
 | **ロボットAPIリファレンス目次** | `adx2_tool/latest/criatom_tools_atomcraft_api_reference.html` — 本MCPサーバーが呼んでいるRobot APIの一次情報はここ |
+| **オブジェクトリファレンス(型名の一次情報)** | `adx2_tool/latest/criatom_tools_atomcraft_api_refobject.html` — `object_type` に使える**全オブジェクト型名**が節ごとに列挙されている。`catalog.py` の `OBJECT_TYPES` はこのページを出典とする(目次ページからは1階層奥にあり見落としやすいので注意) |
 | CRI ADXネイティブSDK(ライブラリAPI・エラーコード) | `native/adx2/latest/` 配下。エラーは `criatom_trblsht_error.html` |
 | CRI Sofdec(ムービー再生) | `native/sofdec2/latest/index.html` |
 | CRI LipSync — Unity向け | `lipsync_v/latest/contents/about_lipsync.html` |

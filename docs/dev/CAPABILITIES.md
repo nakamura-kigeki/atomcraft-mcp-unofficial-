@@ -51,23 +51,35 @@
 
 ## オブジェクト型名の実機検証(Ver.3.56.01 LE版、2026-07-25)
 
-本サーバーが既知値として保持するオブジェクト型名23種を、Atom Craft Ver.3.56.01
-(CRI ADX **LE**版)実機の `find_all_by_type` に全件照合した結果です。判定は
-「`INVALID_TYPE` が返るか」で行っており、ヒット0件でも型名が正しければ success が
-返るため、「存在しない型」と「オブジェクトが0個」は区別できています。
+オブジェクト型名の一次情報はCRI公式の**オブジェクトリファレンス**
+(`criatom_tools_atomcraft_api_refobject.html`)です。公式リスト**84件すべて**を
+Atom Craft Ver.3.56.01(CRI ADX **LE**版)実機の `find_all_by_type` に照合し、
+結果は**83件有効・`Automation` のみ拒否**でした。`catalog.py` の `OBJECT_TYPES` は
+この84件で構成しています。判定は「`INVALID_TYPE` が返るか」で行っており、
+ヒット0件でも型名が正しければ success が返るため、「存在しない型」と
+「オブジェクトが0個」は区別できています。
 
-- **有効(19種)**: Project / WorkUnit / CueSheet / CueSheetFolder / CueFolder / Cue /
-  Track / WaveformRegion / Material / MaterialSubFolder / MaterialRootFolder / Bus /
-  BusMaster / Mixer / SelectorLabel / Selector / Category / CategoryGroup / CategoryFolder
-- **表記修正(2種)**: 旧記載の `AISAC` / `AISACControl`(全大文字)は誤りで、
-  正しくは **`Aisac` / `AisacControl`**(AisacControlは16件ヒット、
-  `get_property` が返す `type_name` も `AisacControl`)。カタログとツールの
-  docstringは修正済み
-- **保留(2種)**: `MaterialFolder` / `Synth` は同環境の `find_all_by_type` では
-  `INVALID_TYPE`。ただし単一メソッド・単一プロジェクト・LE版での結果であり、
-  `get_children` / `get_parent` 等の他メソッドや製品版で有効な可能性が
-  排除できていないため、既知値カタログには注記付きで残しています
-  (エラー時のヒント生成にのみ使われ、呼び出し自体はブロックしないため実害なし)
+- **旧カタログからの主な修正履歴**:
+  - v0.2.2: `AISAC` / `AISACControl`(全大文字)→ **`Aisac` / `AisacControl`** に修正
+    (AisacControlは16件ヒット、`get_property` の `type_name` も `AisacControl`)
+  - v0.2.3: 公式84件で全面置換。旧カタログにあった **`Synth` / `MaterialFolder` は
+    不在と確定し削除**(根拠: (a) `find_objects` / `get_children` / `get_parent` の
+    3メソッドすべてで拒否 (b) 公式オブジェクトリファレンスに記載なし)。
+    また `CueSheetRootFolder`(`atomcraft_get_tree` が実際に返す `type` 値)を含む
+    60件超の取りこぼしを追加
+- **`Automation` のみ保留**: 公式リストに記載があるが、実機Ver.3.56.01(LE)では
+  `INVALID_TYPE`(3回再現。AutomationGraph / AutomationTrack も不可。子要素の
+  `AutomationPoint` は有効)。製品版・新バージョンで有効な可能性を残して
+  カタログには保持
+- **未文書の別名 `Waveform`**: `find_all_by_type('Waveform')` は受理され
+  `Material` と同一のUUID集合を返す(返却 `type_name` は `Material`)。
+  公式一覧に無いためカタログには載せていません
+- **プラットフォーム別ターゲットコンフィグ**(`TargetConfigPs4` / `XboxOne` /
+  `Switch` / `iPhone` / `Android` / `WebGl`)は型としては有効だが、LE版検証
+  プロジェクトでは0件でした(製品版プロジェクトでは存在しうる)
+- **検証の限界**: 単一プロジェクト・単一バージョン(3.56.01 LE)・
+  `find_all_by_type` 単一メソッドでの結果。ヒット0件の型は「型名が受理される」
+  ことのみの確認で、実際の取得・操作までは未検証
 
 ## まだできないこと
 

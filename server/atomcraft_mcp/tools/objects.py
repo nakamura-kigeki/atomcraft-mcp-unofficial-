@@ -72,9 +72,12 @@ def make_tools(t):
           - get_material_rootfolder: マテリアルルートフォルダ(workunit必須)
           - get_project_material_rootfolder: プロジェクトマテリアルルートフォルダ(引数不要)
 
-        object_type例: Project, WorkUnit, CueSheet, CueSheetFolder, Cue, Track,
-                       Material, MaterialSubFolder, MaterialRootFolder, Bus, BusMaster,
-                       Mixer, Aisac, AisacControl, SelectorLabel, Category, CategoryFolder
+        object_type例: Project, WorkUnit, CueSheet, CueSheetRootFolder, CueSheetFolder,
+                       Cue, Track, WaveformRegion, Material, MaterialSubFolder,
+                       MaterialRootFolder, Bus, BusMaster, Mixer, Aisac, AisacControl,
+                       SelectorLabel, Category, CategoryFolder
+                       (全84種の一覧はCRI公式オブジェクトリファレンス
+                        criatom_tools_atomcraft_api_refobject.html を参照)
 
         limit/offset: リスト返却method（find_all_by_type, get_children, get_selected）の
                      ページング。data.total/data.truncatedで全件数・切り詰めの有無を返す。
