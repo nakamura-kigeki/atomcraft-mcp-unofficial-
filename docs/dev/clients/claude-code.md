@@ -28,10 +28,15 @@ cloneや `claude mcp add` での手動登録・スキルの手動コピーに切
 ```powershell
 claude plugin marketplace add nakamura-kigeki/atomcraft-mcp
 claude plugin install atomcraft-mcp@atomcraft-mcp-marketplace
+# 更新(新バージョンの取り込み。適用には /reload-plugins か再起動)
+claude plugin marketplace update atomcraft-mcp-marketplace
+claude plugin update atomcraft-mcp
 # アンインストール・配布元削除
 claude plugin uninstall atomcraft-mcp@atomcraft-mcp-marketplace
 claude plugin marketplace remove atomcraft-mcp-marketplace
 ```
+
+更新はチャットプロンプトの `/plugin` メニューからも行えます。アンインストール→再インストールは不要です。
 
 ## 依存パッケージの自動管理(uv)
 
