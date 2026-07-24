@@ -18,6 +18,21 @@ Claude Codeのプロンプトで以下を順に実行します。
 `@` で連結して指定します(`.claude-plugin/marketplace.json` の最上位の
 `name`(`atomcraft-mcp-marketplace`) / `plugins[].name` に対応)。
 
+**CLIからの導入(AIエージェント・自動化向け)**: `/plugin` はチャットプロンプト専用の
+組み込みコマンドですが、同等の操作は `claude` CLIのサブコマンドとしてターミナルから
+実行できます。セットアップをAIエージェントに任せる場合や、スクリプトで自動化する場合は
+こちらを使ってください(**AIエージェントはこの方式で導入できるため、リポジトリの
+cloneや `claude mcp add` での手動登録・スキルの手動コピーに切り替える必要は
+ありません**)。
+
+```powershell
+claude plugin marketplace add nakamura-kigeki/atomcraft-mcp
+claude plugin install atomcraft-mcp@atomcraft-mcp-marketplace
+# アンインストール・配布元削除
+claude plugin uninstall atomcraft-mcp@atomcraft-mcp-marketplace
+claude plugin marketplace remove atomcraft-mcp-marketplace
+```
+
 ## 依存パッケージの自動管理(uv)
 
 プラグイン既定の `.mcp.json` は `uv run --python 3.10 --with "fastmcp>=2.0.0,<4" ...` の形で

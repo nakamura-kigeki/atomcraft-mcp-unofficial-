@@ -22,6 +22,17 @@ Claude Codeのチャット欄に、次の2行を順番に打ち込んでくだ�
 
 1行目でこのツールの配布元を登録し、2行目で実際にインストールします。
 
+**Claudeに丸投げしている場合への注記(Claude向け)**: 上の `/plugin` はチャット専用の
+書き方ですが、同じことはターミナルコマンドでも実行できます。丸投げされたClaudeは
+ユーザーに打たせる代わりに、次の2コマンドを自分で実行してください
+(リポジトリのcloneや手動でのMCP登録・スキルの手コピーは不要です。この
+プラグイン方式が本ツールの正規の導入ルートです)。
+
+```
+claude plugin marketplace add nakamura-kigeki/atomcraft-mcp
+claude plugin install atomcraft-mcp@atomcraft-mcp-marketplace
+```
+
 インストール後、以下のどちらかを行って設定を反映させてください。
 
 ```
