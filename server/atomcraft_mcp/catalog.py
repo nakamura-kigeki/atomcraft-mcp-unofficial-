@@ -23,17 +23,24 @@ OBJECT_TYPES: list[str] = [
     "CueFolder",
     "Cue",
     "Track",
+    # "Synth" は実機Ver.3.56.01(LE)の find_objects では INVALID_TYPE(SubSynthも不可)。
+    # 他メソッド・製品版での有効性は未検証のため保留のまま残している。
     "Synth",
     "WaveformRegion",
     "Material",
+    # "MaterialFolder" は実機Ver.3.56.01(LE)の find_objects では INVALID_TYPE
+    # (MaterialSubFolder / MaterialRootFolder は有効)。他メソッド未検証のため保留。
     "MaterialFolder",
     "MaterialSubFolder",
     "MaterialRootFolder",
     "Bus",
     "BusMaster",
     "Mixer",
-    "AISAC",
-    "AISACControl",
+    # 実機Ver.3.56.01で全23型を find_all_by_type に当てた結果、
+    # AISAC/AISACControl(全大文字)は誤りで Aisac/AisacControl が正
+    # (AisacControl は16件ヒット、get_property の type_name も AisacControl)。
+    "Aisac",
+    "AisacControl",
     "SelectorLabel",
     "Selector",
     "Category",

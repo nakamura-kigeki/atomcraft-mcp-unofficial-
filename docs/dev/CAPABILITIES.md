@@ -24,7 +24,7 @@
 | ツール名 | できること | 危険度 | 必要バージョン | 検証状態 |
 |---|---|---|---|---|
 | `atomcraft_debug` | ping/reconnect/status/log/warning/clear_log/get_version | ping・status・get_version=読み取り、reconnect・log・warning・clear_log=冪等書き込み | Ver.3.44.18(基本)。`get_version`が内部で使う`get_tool_version`自体はVer.3.46.04追加(それ未満は取得失敗として扱われるだけでエラーにはならない) | ping・get_versionは3.57.02実機で確認済み。他actionはユニットテストのみ |
-| `atomcraft_get_object` | find_by_name/find_all_by_type/get_by_path/get_children/get_child_by_name/get_parent/get_selected/get_root/get_global_folder/get_workunit/get_cuesheet_rootfolder/get_material_rootfolder/get_project_material_rootfolder | 読み取り | Ver.3.44.18 | get_root・find_all_by_type(Cue/Track)は3.57.02実機で確認済み。他methodはユニットテストのみ |
+| `atomcraft_get_object` | find_by_name/find_all_by_type/get_by_path/get_children/get_child_by_name/get_parent/get_selected/get_root/get_global_folder/get_workunit/get_cuesheet_rootfolder/get_material_rootfolder/get_project_material_rootfolder | 読み取り | Ver.3.44.18 | get_root・find_all_by_type(Cue/Track)は3.57.02(製品版)実機で確認済み。さらにVer.3.56.01(LE版)実機でオブジェクト型名23種を find_all_by_type に全件照合済み(下記「オブジェクト型名の実機検証」節)。他methodはユニットテストのみ |
 | `atomcraft_create_object` | 汎用オブジェクト作成(CueSheet/Cue/Track/Bus/SelectorLabel/Category等) | 非冪等作成 | Ver.3.44.18 | ユニットテストのみ(実機未検証) |
 | `atomcraft_modify_object` | copy/duplicate/move/delete/select | copy・duplicate・move・delete=非冪等作成、select=冪等書き込み | Ver.3.44.18。ただしcopyでAISAC/オートメーションのポイント・グラフをコピーする場合、Ver.3.47.00〜Ver.3.55.02(グラフはVer.3.54.02まで)の接続先では欠落する既知不具合がツール側にある(詳細はVERSION-NOTES.md) | deleteは3.57.02実機で確認済み(beatsync検証で作成したトラックの後片付けに使用)。他actionは未検証 |
 | `atomcraft_get_property` | 単一/複数フィールドの取得、継承解決後の実効値取得(use_actual_value)、色情報の取得。無効フィールドは自動除外して部分成功を返す | 読み取り | Ver.3.44.18(use_actual_valueが呼ぶget_actual_valueはVer.3.45.00で追加) | 単一フィールド(Comment)の取得は3.57.02実機で確認済み(bulk_property set往復確認の退避・検証に使用)。use_actual_value等は未実機検証 |
@@ -48,6 +48,26 @@
 補足: ユニットテストは `python -m pytest server/tests -q` で228件パス(2026-07-24時点)。
 「ユニットテストのみ」の行はfake_robotによるモック検証であり、実際のAtom Craft
 本体との通信は確認できていません。
+
+## オブジェクト型名の実機検証(Ver.3.56.01 LE版、2026-07-25)
+
+本サーバーが既知値として保持するオブジェクト型名23種を、Atom Craft Ver.3.56.01
+(CRI ADX **LE**版)実機の `find_all_by_type` に全件照合した結果です。判定は
+「`INVALID_TYPE` が返るか」で行っており、ヒット0件でも型名が正しければ success が
+返るため、「存在しない型」と「オブジェクトが0個」は区別できています。
+
+- **有効(19種)**: Project / WorkUnit / CueSheet / CueSheetFolder / CueFolder / Cue /
+  Track / WaveformRegion / Material / MaterialSubFolder / MaterialRootFolder / Bus /
+  BusMaster / Mixer / SelectorLabel / Selector / Category / CategoryGroup / CategoryFolder
+- **表記修正(2種)**: 旧記載の `AISAC` / `AISACControl`(全大文字)は誤りで、
+  正しくは **`Aisac` / `AisacControl`**(AisacControlは16件ヒット、
+  `get_property` が返す `type_name` も `AisacControl`)。カタログとツールの
+  docstringは修正済み
+- **保留(2種)**: `MaterialFolder` / `Synth` は同環境の `find_all_by_type` では
+  `INVALID_TYPE`。ただし単一メソッド・単一プロジェクト・LE版での結果であり、
+  `get_children` / `get_parent` 等の他メソッドや製品版で有効な可能性が
+  排除できていないため、既知値カタログには注記付きで残しています
+  (エラー時のヒント生成にのみ使われ、呼び出し自体はブロックしないため実害なし)
 
 ## まだできないこと
 
