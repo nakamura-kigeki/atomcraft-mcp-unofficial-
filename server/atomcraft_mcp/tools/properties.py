@@ -16,7 +16,7 @@ from .. import catalog
 
 CategoryAction = Literal["get", "set", "add"]
 
-# 根拠は docs/api-versions.md の採用値(確度: 推定/極めて低い)。
+# 根拠は docs/dev/api-versions.md の採用値(確度: 推定/極めて低い)。
 MIN_VER_BULK = (3, 42, 0)
 
 

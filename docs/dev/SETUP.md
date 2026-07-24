@@ -1,7 +1,7 @@
 # SETUP.md — 共通セットアップ手順
 
 Claude Code・Codex CLIのどちらから使う場合でも共通の準備です。クライアント固有の手順は
-[docs/clients/claude-code.md](clients/claude-code.md) / [docs/clients/codex.md](clients/codex.md) を参照してください。
+[clients/claude-code.md](clients/claude-code.md) / [clients/codex.md](clients/codex.md) を参照してください。
 
 ## 前提
 

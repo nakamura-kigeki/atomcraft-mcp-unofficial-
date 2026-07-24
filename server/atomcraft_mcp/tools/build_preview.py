@@ -24,7 +24,7 @@ BuildAction = Literal["build", "clean_all"]
 PreviewAction = Literal["play", "stop_all", "get_playback_state",
                         "start_ingame_preview", "stop_ingame_preview"]
 
-# 根拠は docs/api-versions.md の採用値。
+# 根拠は docs/dev/api-versions.md の採用値。
 # start_ingame_preview / stop_ingame_preview は変更履歴に関数名が明記され確定。
 # get_playback_state は同時期追加の推定（安全側で同じ下限を採用し、
 # 実際の防波堤はrequire_featureの関数存在チェックに委ねる）。

@@ -155,7 +155,7 @@ def test_preview_unknown_action(tools):
 
 
 # --- atomcraft_preview: get_playback_state / start_ingame_preview / stop_ingame_preview ---
-# (Ver.3.47.0で追加。docs/api-versions.md参照)
+# (Ver.3.47.0で追加。docs/dev/api-versions.md参照)
 
 def test_preview_get_playback_state_success(tools):
     fns, fake = tools

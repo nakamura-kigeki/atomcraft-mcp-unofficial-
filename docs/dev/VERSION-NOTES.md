@@ -473,9 +473,9 @@ Atom Craft に接続してこれらのツールが `UNSUPPORTED_VERSION` を返�
 `details.probe` を見れば「バージョンが低いと判定されたのか」「そもそも関数が存在しない
 (=`robot-path` が古い Python を指している可能性)のか」を区別できる。
 
-[bp]: ../server/atomcraft_mcp/tools/build_preview.py
-[bs]: ../server/atomcraft_mcp/tools/beatsync.py
-[pr]: ../server/atomcraft_mcp/tools/properties.py
+[bp]: ../../server/atomcraft_mcp/tools/build_preview.py
+[bs]: ../../server/atomcraft_mcp/tools/beatsync.py
+[pr]: ../../server/atomcraft_mcp/tools/properties.py
 
 ## 出典について
 

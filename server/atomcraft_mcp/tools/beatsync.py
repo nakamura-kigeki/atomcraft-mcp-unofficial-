@@ -14,7 +14,7 @@ from ..versioning import require_feature
 
 BeatsyncAction = Literal["create_track", "create"]
 
-# 根拠は docs/api-versions.md の採用値(確度: 推定/低め)。
+# 根拠は docs/dev/api-versions.md の採用値(確度: 推定/低め)。
 # create_beatsync / create_beatsync_track とも履歴文書に関数名の明記はなく、
 # Ver.3.41.01には存在せずVer.3.57.02には存在することのみ確認済み。
 # 安全側としてrequire_featureの関数存在チェック(callable_missing)を実質的な

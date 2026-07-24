@@ -11,7 +11,7 @@
 すべて `mcp__<サーバー登録名>__atomcraft_*` の形で呼ばれます(登録名はクライアント
 設定に依存するため決め打ちしない)。各ツールの危険度(読み取り/冪等書き込み/
 非冪等作成/ビルド・保存)とバージョン要件・実機検証状況の詳細は
-`docs/CAPABILITIES.md` の機能マトリクスを参照。
+`docs/dev/CAPABILITIES.md` の機能マトリクスを参照。
 
 - **接続・診断**: `atomcraft_debug`
   ping/reconnect/status/log/warning/clear_log/get_version。作業開始前に
@@ -21,7 +21,7 @@
   名前からのUUID解決(`find_by_name`等)、単一/複数フィールドのプロパティ取得、
   フォルダ階層の一括取得。`atomcraft_bulk_property` の `action=get` は3.57.02実機で
   未解決のAPI_ERRORが確認されているため、個別取得(`atomcraft_get_property`)を
-  優先する(詳細は `docs/CAPABILITIES.md`)。
+  優先する(詳細は `docs/dev/CAPABILITIES.md`)。
 - **作成・編集(汎用オブジェクト)**: `atomcraft_create_object` /
   `atomcraft_modify_object` / `atomcraft_set_property` /
   `atomcraft_bulk_property`(action=set)
@@ -83,13 +83,13 @@
 
 ## 詳細ドキュメントへのポインタ
 
-- `docs/HANDBOOK.md` — 接続の仕組み、エラー封筒、UUID解決、日本語パスの罠、
+- `docs/dev/HANDBOOK.md` — 接続の仕組み、エラー封筒、UUID解決、日本語パスの罠、
   大量呼び出しの委譲方針など、運用ハンドブック。
-- `docs/CAPABILITIES.md` — 21ツールの機能マトリクス(できること・危険度・
+- `docs/dev/CAPABILITIES.md` — 21ツールの機能マトリクス(できること・危険度・
   必要バージョン・実機検証状況)、未対応の機能一覧。
-- `docs/VERSION-NOTES.md` — Atom Craftのバージョン別の概念差分・既知不具合。
-- `docs/CRI-DOC-MAP.md` — CRIWARE公式ドキュメント(game.criware.jp)横断検索の
+- `docs/dev/VERSION-NOTES.md` — Atom Craftのバージョン別の概念差分・既知不具合。
+- `docs/dev/CRI-DOC-MAP.md` — CRIWARE公式ドキュメント(game.criware.jp)横断検索の
   地図。ADX/Atom Craft/Sofdec/LipSync等の仕様・APIそのものを調べたいときはこちら
   (`.agents/skills/cri-doc-search/SKILL.md` から辿れる)。
-- `docs/SKILL-AUTHORING.md` — プロジェクト固有の定型作業をスキル化する際の
+- `docs/dev/SKILL-AUTHORING.md` — プロジェクト固有の定型作業をスキル化する際の
   ヒント(Claude Codeの`skills/`とCodexの`.agents/skills/`の両対応の書き方)。

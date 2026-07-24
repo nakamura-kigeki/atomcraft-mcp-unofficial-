@@ -1,8 +1,8 @@
 # CRI-DOC-MAP.md — CRIWAREドキュメント横断検索の地図
 
 CRIWARE(CRI ADX / Atom Craft / Sofdec / LipSync等)の仕様・API・エラーを調べる際の
-足がかりです。本MCPサーバー自体の仕様は `docs/CAPABILITIES.md` / `docs/HANDBOOK.md` /
-`docs/VERSION-NOTES.md` を参照してください。ここで扱うのはCRI社の公式ドキュメント
+足がかりです。本MCPサーバー自体の仕様は `CAPABILITIES.md` / `HANDBOOK.md` /
+`VERSION-NOTES.md` を参照してください。ここで扱うのはCRI社の公式ドキュメント
 (`game.criware.jp`)への効率のよいたどり着き方だけです。
 
 URLは2026-07時点で到達確認したものです。サイト構造は将来変わりうるため、

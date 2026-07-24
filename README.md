@@ -7,14 +7,14 @@ Claude Code・Codex CLIの両方に対応し、CRIWARE公式ドキュメント�
 ## どちらから読むか
 
 - 🎵 **サウンド制作の方** → [docs/guide/START.md](docs/guide/START.md) からどうぞ。このREADMEの残りは読まなくてOKです
-- 🔧 **エンジニアの方** → このREADMEと `docs/` 直下のドキュメントへどうぞ
+- 🔧 **エンジニアの方** → このREADMEと `docs/dev/` 配下のドキュメントへどうぞ
 
 ## 対応クライアント
 
 | クライアント | 導入方法 | 手順 |
 |---|---|---|
-| Claude Code | プラグインマーケットプレイス経由 | [docs/clients/claude-code.md](docs/clients/claude-code.md) |
-| Codex CLI | `codex mcp add`(TOML手編集は代替手順) | [docs/clients/codex.md](docs/clients/codex.md) |
+| Claude Code | プラグインマーケットプレイス経由 | [docs/dev/clients/claude-code.md](docs/dev/clients/claude-code.md) |
+| Codex CLI | `codex mcp add`(TOML手編集は代替手順) | [docs/dev/clients/codex.md](docs/dev/clients/codex.md) |
 
 ## 導入(Claude Code・最短2コマンド)
 
@@ -26,9 +26,9 @@ Claude Code・Codex CLIの両方に対応し、CRIWARE公式ドキュメント�
 インストール後は `/reload-plugins`(または Claude Code の再起動)→ `/mcp` で接続とツール数を確認してください。
 robot-path(後述)が未設定のままだとMCPサーバープロセス自体が起動時に`RobotPathError`で終了し、
 `/mcp` では `atomcraft` サーバーが failed / ツール0件と表示されます。読み方は
-[docs/clients/claude-code.md](docs/clients/claude-code.md) を参照してください。
+[docs/dev/clients/claude-code.md](docs/dev/clients/claude-code.md) を参照してください。
 
-Codex CLIから使う場合は [docs/clients/codex.md](docs/clients/codex.md) を参照してください。
+Codex CLIから使う場合は [docs/dev/clients/codex.md](docs/dev/clients/codex.md) を参照してください。
 
 ## 構成図
 
@@ -52,22 +52,24 @@ MCPサーバーは起動時にAtom Craftへ接続しません(遅延接続)。�
 - [docs/guide/USING.md](docs/guide/USING.md) — 使い方実例集・あるあるトラブルと対処
 - [docs/guide/FAQ.md](docs/guide/FAQ.md) — つまずき集
 
-### 🔧 エンジニア向け(辛口・技術的詳細をそのまま記載)
+### 🔧 エンジニア向け(辛口・技術的詳細をそのまま記載。すべて `docs/dev/` 配下)
 
-- [docs/SETUP.md](docs/SETUP.md) — 共通セットアップ手順(Python導入・依存インストール・robot-path設定・疎通確認・つまずき集)
-- [docs/clients/claude-code.md](docs/clients/claude-code.md) — Claude Code向け導入手順
-- [docs/clients/codex.md](docs/clients/codex.md) — Codex CLI向け導入手順
-- [docs/HANDBOOK.md](docs/HANDBOOK.md) — 運用ハンドブック(接続の仕組み・エラー封筒・UUID解決・大量呼び出しの委譲方針・制作運用の知見など)
-- [docs/CAPABILITIES.md](docs/CAPABILITIES.md) — 21ツールの機能マトリクス(できること・危険度・必要バージョン・実機検証状況)
-- [docs/VERSION-NOTES.md](docs/VERSION-NOTES.md) — Atom Craftのバージョン別の概念差分・既知不具合
-- [docs/CRI-DOC-MAP.md](docs/CRI-DOC-MAP.md) — CRIWARE公式ドキュメント横断検索の地図(`skills/cri-doc-search` から辿れる)
-- [docs/SKILL-AUTHORING.md](docs/SKILL-AUTHORING.md) — プロジェクト固有の定型作業をスキル化する際のヒント
+- [docs/dev/SETUP.md](docs/dev/SETUP.md) — 共通セットアップ手順(Python導入・依存インストール・robot-path設定・疎通確認・つまずき集)
+- [docs/dev/clients/claude-code.md](docs/dev/clients/claude-code.md) — Claude Code向け導入手順
+- [docs/dev/clients/codex.md](docs/dev/clients/codex.md) — Codex CLI向け導入手順
+- [docs/dev/HANDBOOK.md](docs/dev/HANDBOOK.md) — 運用ハンドブック(接続の仕組み・エラー封筒・UUID解決・大量呼び出しの委譲方針・制作運用の知見など)
+- [docs/dev/CAPABILITIES.md](docs/dev/CAPABILITIES.md) — 21ツールの機能マトリクス(できること・危険度・必要バージョン・実機検証状況)
+- [docs/dev/VERSION-NOTES.md](docs/dev/VERSION-NOTES.md) — Atom Craftのバージョン別の概念差分・既知不具合
+- [docs/dev/CRI-DOC-MAP.md](docs/dev/CRI-DOC-MAP.md) — CRIWARE公式ドキュメント横断検索の地図(`skills/cri-doc-search` から辿れる)
+- [docs/dev/SKILL-AUTHORING.md](docs/dev/SKILL-AUTHORING.md) — プロジェクト固有の定型作業をスキル化する際のヒント
+- [docs/dev/api-versions.md](docs/dev/api-versions.md) — API採用値の根拠一覧
+- [docs/dev/verification-3.57.02.md](docs/dev/verification-3.57.02.md) — 実機検証記録(Ver.3.57.02)
 - [AGENTS.md](AGENTS.md) — Codex CLI向けのコンテキストサマリー
 
 ## 動作要件
 
 - Windows(CRI Atom Craft自体がWindows専用のため)
-- uv(推奨。必要なPythonと依存を自動管理)または Python 3.10/3.11 + pip(代替)。Atom Craft Ver.3.55.00以降のRobot PythonがPython 3.10/3.11のみに対応しているため。詳細は [docs/VERSION-NOTES.md](docs/VERSION-NOTES.md)、導入手順は [docs/SETUP.md](docs/SETUP.md)
+- uv(推奨。必要なPythonと依存を自動管理)または Python 3.10/3.11 + pip(代替)。Atom Craft Ver.3.55.00以降のRobot PythonがPython 3.10/3.11のみに対応しているため。詳細は [docs/dev/VERSION-NOTES.md](docs/dev/VERSION-NOTES.md)、導入手順は [docs/dev/SETUP.md](docs/dev/SETUP.md)
 - CRI Atom Craft本体、およびそのRobot Python API(`robot\remote\Python`)— いずれも各自のCRIライセンスで入手してください。本リポジトリには含まれません
 
 ## 免責事項
