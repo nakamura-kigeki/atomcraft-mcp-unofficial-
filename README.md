@@ -1,0 +1,85 @@
+# CRI Atom Craft MCP
+
+CRI Atom Craft のサウンドオーサリング操作(キューシート作成・マテリアル登録・ミキサー設定・ビルド等)を、LLMエージェントからMCP(Model Context Protocol)経由でリモート操作できるようにするサーバーです。
+Atom Craft付属のRobot Python APIを薄くラップし、21個のMCPツールとして公開します。
+Claude Code・Codex CLIの両方に対応し、CRIWARE公式ドキュメント横断検索用のスキルも同梱しています。
+
+## どちらから読むか
+
+- 🎵 **サウンド制作の方** → [docs/guide/START.md](docs/guide/START.md) からどうぞ。このREADMEの残りは読まなくてOKです
+- 🔧 **エンジニアの方** → このREADMEと `docs/` 直下のドキュメントへどうぞ
+
+## 対応クライアント
+
+| クライアント | 導入方法 | 手順 |
+|---|---|---|
+| Claude Code | プラグインマーケットプレイス経由 | [docs/clients/claude-code.md](docs/clients/claude-code.md) |
+| Codex CLI | `codex mcp add`(TOML手編集は代替手順) | [docs/clients/codex.md](docs/clients/codex.md) |
+
+## 導入(Claude Code・最短2コマンド)
+
+```
+/plugin marketplace add nakamura-kigeki/atomcraft-mcp
+/plugin install atomcraft-mcp@atomcraft-mcp-marketplace
+```
+
+インストール後は `/reload-plugins`(または Claude Code の再起動)→ `/mcp` で接続とツール数を確認してください。
+robot-path(後述)が未設定のままだとMCPサーバープロセス自体が起動時に`RobotPathError`で終了し、
+`/mcp` では `atomcraft` サーバーが failed / ツール0件と表示されます。読み方は
+[docs/clients/claude-code.md](docs/clients/claude-code.md) を参照してください。
+
+Codex CLIから使う場合は [docs/clients/codex.md](docs/clients/codex.md) を参照してください。
+
+## 構成図
+
+```
+┌─────────────────┐        MCP (stdio)        ┌──────────────────────┐        TCP :9000        ┌────────────────┐
+│ Claude Code /    │ ─────────────────────────▶ │ atomcraft-mcp server │ ────────────────────────▶ │ CRI Atom Craft  │
+│ Codex CLI 等の    │ ◀───────────────────────── │ (server/server.py)   │ ◀──────────────────────── │ (スクリプト       │
+│ MCPクライアント   │        21ツール応答         │  robot.py が Robot   │     Robot Python API      │  サーバー起動済み) │
+└─────────────────┘                            │  Python APIをロード   │                            └────────────────┘
+                                                └──────────────────────┘
+```
+
+MCPサーバーは起動時にAtom Craftへ接続しません(遅延接続)。ツール一覧の表示自体はAtom Craft未起動でも可能で、実際の操作を呼び出した時点で初めて `127.0.0.1:9000` への接続を試みます。
+
+## ドキュメント一覧
+
+### 🎵 サウンドの人向け(甘口・専門用語は初出で説明)
+
+- [docs/guide/START.md](docs/guide/START.md) — これは何か・できることの例・導入の全体像
+- [docs/guide/SETUP.md](docs/guide/SETUP.md) — やさしいセットアップ手順
+- [docs/guide/USING.md](docs/guide/USING.md) — 使い方実例集・あるあるトラブルと対処
+- [docs/guide/FAQ.md](docs/guide/FAQ.md) — つまずき集
+
+### 🔧 エンジニア向け(辛口・技術的詳細をそのまま記載)
+
+- [docs/SETUP.md](docs/SETUP.md) — 共通セットアップ手順(Python導入・依存インストール・robot-path設定・疎通確認・つまずき集)
+- [docs/clients/claude-code.md](docs/clients/claude-code.md) — Claude Code向け導入手順
+- [docs/clients/codex.md](docs/clients/codex.md) — Codex CLI向け導入手順
+- [docs/HANDBOOK.md](docs/HANDBOOK.md) — 運用ハンドブック(接続の仕組み・エラー封筒・UUID解決・大量呼び出しの委譲方針・制作運用の知見など)
+- [docs/CAPABILITIES.md](docs/CAPABILITIES.md) — 21ツールの機能マトリクス(できること・危険度・必要バージョン・実機検証状況)
+- [docs/VERSION-NOTES.md](docs/VERSION-NOTES.md) — Atom Craftのバージョン別の概念差分・既知不具合
+- [docs/CRI-DOC-MAP.md](docs/CRI-DOC-MAP.md) — CRIWARE公式ドキュメント横断検索の地図(`skills/cri-doc-search` から辿れる)
+- [docs/SKILL-AUTHORING.md](docs/SKILL-AUTHORING.md) — プロジェクト固有の定型作業をスキル化する際のヒント
+- [AGENTS.md](AGENTS.md) — Codex CLI向けのコンテキストサマリー
+
+## 動作要件
+
+- Windows(CRI Atom Craft自体がWindows専用のため)
+- uv(推奨。必要なPythonと依存を自動管理)または Python 3.10/3.11 + pip(代替)。Atom Craft Ver.3.55.00以降のRobot PythonがPython 3.10/3.11のみに対応しているため。詳細は [docs/VERSION-NOTES.md](docs/VERSION-NOTES.md)、導入手順は [docs/SETUP.md](docs/SETUP.md)
+- CRI Atom Craft本体、およびそのRobot Python API(`robot\remote\Python`)— いずれも各自のCRIライセンスで入手してください。本リポジトリには含まれません
+
+## 免責事項
+
+**本ツールは実験的な段階です。** CRIツールのバージョンや環境により不安定な挙動をすることがあります。また、プロジェクトの構造・名称等の情報がAI(クラウド)に送信されるため、機密情報の扱いは各組織のAI利用ポリシーに従ってください。
+
+**本プロジェクトは非公式であり、CRI Middleware株式会社とは無関係です。** CRI社のコード・ドキュメントは一切含まれていません。CRI Atom Craft本体とそのRobot APIは、利用者ご自身のCRIライセンスに基づいて別途入手してください。本リポジトリが提供するのは、既に入手済みのRobot Python APIをMCP経由で呼び出す薄いラッパー(サーバー実装)のみです。
+
+## リリース運用ルール
+
+リリース(マーケットプレイスへの公開更新)のたびに、`.claude-plugin/plugin.json` の `version` を必ず上げてください。Claude Codeのプラグイン更新はバージョン変更を手がかりに検知されるため、コード変更のみでversionを据え置くと、既存ユーザーの環境に更新が反映されません。
+
+## ライセンス
+
+[MIT License](LICENSE)

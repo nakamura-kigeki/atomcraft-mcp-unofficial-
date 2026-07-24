@@ -1,0 +1,8 @@
+{
+  "name": "atomcraft-mcp",
+  "displayName": "CRI Atom Craft MCP",
+  "version": "0.2.1",
+  "description": "CRI Atom Craft をLLMからリモート操作するMCPサーバー + CRIWAREドキュメント検索スキル",
+  "author": { "name": "nakamura-kigeki" },
+  "mcpServers": "./.mcp.json"
+}

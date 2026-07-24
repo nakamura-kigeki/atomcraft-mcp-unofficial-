@@ -1,0 +1,7 @@
+{
+  "name": "atomcraft-mcp-marketplace",
+  "owner": { "name": "nakamura-kigeki" },
+  "plugins": [
+    { "name": "atomcraft-mcp", "source": "./", "description": "CRI Atom Craft MCP server + CRI docs search skill" }
+  ]
+}

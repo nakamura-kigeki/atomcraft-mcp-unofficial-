@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "atomcraft": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--python", "3.10",
+        "--with", "fastmcp>=2.0.0,<4",
+        "${CLAUDE_PLUGIN_ROOT}/server/server.py"
+      ],
+      "env": {
+        "ATOMCRAFT_HOST": "127.0.0.1",
+        "ATOMCRAFT_PORT": "9000",
+        "PYTHONPATH": "",
+        "PYTHONHOME": ""
+      }
+    }
+  }
+}
