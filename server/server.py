@@ -25,7 +25,9 @@ mcp = FastMCP(
         "使用前に CRI Atom Craft を起動し、スクリプトメニュー > サーバー > スクリプトサーバーを起動 してください。\n"
         "オブジェクトはUUID文字列で識別されます。まず atomcraft_debug(action='ping') で接続確認してください。\n"
         "エラー時は code / hint / retryable を確認: retryable=true なら再実行可、"
-        "UNKNOWN_OUTCOME は対象の存在確認後に再実行してください。"
+        "UNKNOWN_OUTCOME は対象の存在確認後に再実行してください。\n"
+        "型名・フィールド名・graph_type は推測で指定せず、エラーの hint に出る近似候補に"
+        "従ってください(公式ドキュメントには不完全な箇所があり、実機の応答が正です)。"
     ),
 )
 register_all(mcp, transport, settings)

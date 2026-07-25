@@ -142,6 +142,9 @@ def make_tools(t, settings):
 
         root: 起点オブジェクトのUUID
         child_types: 展開する子タイプ名のリスト。リスト内の全タイプについて子要素を検索する。
+            バージョン差を吸収するため多めに列挙してよい(supersetを投げる呼び出し方は正当)。
+            CueSheetFolder と CueSheetSubFolder のようなエイリアス関係の型を併記しても、
+            同じ子オブジェクトが重複して展開されることはない(UUIDで排除する)。
             例: ["CueSheetFolder","CueSheet","CueFolder","Cue"]
             例: ["CategoryGroup","Category"]
             例: ["MaterialSubFolder","Material"]
@@ -289,9 +292,23 @@ def make_tools(t, settings):
             return type_name, path
 
         def _get_children_ids(obj_id: str) -> list:
+            """このノードの子UUIDを child_types 全型ぶん集める(出現順・UUID重複排除)。
+
+            重複排除の理由: CueSheetFolder/CueSheetSubFolder のようなエイリアス関係の
+            型を child_types に併記すると、同じ子オブジェクトが型の数だけ返る。
+            排除しないと _build_node が同じサブツリーを再帰的に再走査するため、
+            出力もAPI呼び出し数も倍増し、csv出力では同一行が重複してCOUNT/SUMが
+            静かに壊れる。supersetを投げるのは正当な作法なので、警告は出さずに
+            黙って排除する(正しい使い方のたびに警告が出るとノイズになるため)。
+
+            スコープは「1ノードの子リスト内」に限定する。同一UUIDが1ノードの子として
+            複数回現れるのは常に無意味だが、グローバルなvisited管理にすると、
+            複数の親から参照されうる正当なノードを消す危険があるため広げない。
+            """
             if _stopped():
                 return []
             all_children = []
+            seen = set()
             for ctype in child_types:
                 if _stopped():
                     break
@@ -303,7 +320,11 @@ def make_tools(t, settings):
                     if isinstance(child_ids, list):
                         if len(child_ids) > max_children:
                             _state["truncated"] = True
-                        all_children.extend(child_ids[:max_children])
+                        for cid in child_ids[:max_children]:
+                            if cid in seen:
+                                continue
+                            seen.add(cid)
+                            all_children.append(cid)
                 elif classify(child_result.get("message", "")).code == "INVALID_TYPE":
                     # 無効な型名は「その型の子が0件」と区別できないまま黙って捨てられると、
                     # 呼び出し側が「網羅できた」と誤認する。走査は続けつつ(supersetを投げて

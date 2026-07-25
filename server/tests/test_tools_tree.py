@@ -436,3 +436,93 @@ def test_invalid_child_type_reported_in_csv_mode(fake_robot, tmp_path):
     assert r["success"] is True
     assert r["data"]["invalid_child_types"] == ["BogusTypeXYZ"]
     assert any("BogusTypeXYZ" in w for w in r["warnings"])
+
+
+# --- エイリアス型併記時の子要素重複排除(v0.2.6で追加) ---
+
+def _alias_tree_handlers(fake_robot):
+    """CueSheetFolder と CueSheetSubFolder が同一UUIDを返すエイリアス構成を再現する。
+
+    ルート配下: 両型とも "sub1"(同一実体)を返す。
+    "sub1" 配下: CueSheet として "cs1" を持つ。
+    """
+    def get_child_objects(parent, object_type):
+        if parent == "root" and object_type in ("CueSheetFolder", "CueSheetSubFolder"):
+            return {"succeed": True, "data": ["sub1"], "message": ""}
+        if parent == "sub1" and object_type == "CueSheet":
+            return {"succeed": True, "data": ["cs1"], "message": ""}
+        return {"succeed": True, "data": [], "message": ""}
+
+    fake_robot.set_handler("project", "get_child_objects", get_child_objects)
+    fake_robot.set_handler("project", "get_type_name",
+                           {"succeed": True, "data": "CueSheetFolder", "message": ""})
+    fake_robot.set_handler("project", "get_object_path",
+                           {"succeed": True, "data": "/WU/Root", "message": ""})
+    fake_robot.set_handler("project", "get_value",
+                           {"succeed": True, "data": "name", "message": ""})
+    return _make_tools(fake_robot)
+
+
+def test_alias_child_types_do_not_duplicate_children(fake_robot):
+    fns = _alias_tree_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root",
+        child_types=["CueSheetFolder", "CueSheetSubFolder", "CueSheet"],
+        fields=["Name"]))
+
+    assert r["success"] is True
+    tree = r["data"]["tree"]
+    assert tree["child_count"] == 1  # 修正前は2(同一UUIDが2回)
+    assert [c["uuid"] for c in tree["children"]] == ["sub1"]
+
+
+def test_alias_dedup_keeps_valid_descendants(fake_robot):
+    """重複排除しても、そのサブツリーの子孫が欠落しないこと"""
+    fns = _alias_tree_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root",
+        child_types=["CueSheetFolder", "CueSheetSubFolder", "CueSheet"],
+        fields=["Name"]))
+
+    sub = r["data"]["tree"]["children"][0]
+    assert [c["uuid"] for c in sub["children"]] == ["cs1"]
+
+
+def test_distinct_children_are_all_kept(fake_robot):
+    """同一UUIDが返らない通常ケースでは既存の挙動が変わらないこと"""
+    def get_child_objects(parent, object_type):
+        if parent == "root" and object_type == "CueFolder":
+            return {"succeed": True, "data": ["f1", "f2"], "message": ""}
+        if parent == "root" and object_type == "Cue":
+            return {"succeed": True, "data": ["c1"], "message": ""}
+        return {"succeed": True, "data": [], "message": ""}
+
+    fake_robot.set_handler("project", "get_child_objects", get_child_objects)
+    fake_robot.set_handler("project", "get_type_name",
+                           {"succeed": True, "data": "CueFolder", "message": ""})
+    fake_robot.set_handler("project", "get_object_path",
+                           {"succeed": True, "data": "/WU/CS", "message": ""})
+    fake_robot.set_handler("project", "get_value",
+                           {"succeed": True, "data": "name", "message": ""})
+    fns = _make_tools(fake_robot)
+
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root", child_types=["CueFolder", "Cue"], fields=["Name"]))
+    tree = r["data"]["tree"]
+    assert tree["child_count"] == 3
+    assert [c["uuid"] for c in tree["children"]] == ["f1", "f2", "c1"]  # 出現順も保つ
+
+
+def test_alias_dedup_prevents_duplicate_csv_rows(fake_robot, tmp_path):
+    """csv経路の重複行(COUNT/SUMが静かに倍になる最悪ケース)が出ないこと"""
+    fns = _alias_tree_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root",
+        child_types=["CueSheetFolder", "CueSheetSubFolder", "CueSheet"],
+        fields=["Name"], output_format="csv", output_dir=str(tmp_path)))
+
+    assert r["success"] is True
+    with open(r["data"]["csv_file"], encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    uuids = [row["uuid"] for row in rows]
+    assert len(uuids) == len(set(uuids)), f"CSVに重複行がある: {uuids}"

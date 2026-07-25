@@ -149,15 +149,23 @@ OBJECT_TYPES: list[str] = [
     "CueSheetSubFolder",
 ]
 
-# 実機が受理するが、別の型と同一のオブジェクト集合を返す未文書エイリアス。
-# OBJECT_TYPES に入れると同じ実体が二重に見えるため、記録のみに留める
-# (実機Ver.3.57.02でUUID集合の一致を確認済み)。
+# 左辺の型名も実機に受理されるが、右辺と同一のオブジェクトを返すエイリアス
+# (get_property が返す type_name は右辺)。実機でUUID集合の一致を確認済み。
+#
+# エイリアスを OBJECT_TYPES に載せると同じ実体が二重に見えるため、原則として
+# 正規名(右辺)のみを載せる。ただし以下2件は例外的に OBJECT_TYPES にも含まれる:
+#   - AutomationPoint: 公式オブジェクトリファレンスに正式な型として記載があるため
+#   - CueSheetSubFolder: 公式未記載だが実機が受理する型として0.2.4で追加したため
+# どちらも「OBJECT_TYPESに残すか」は未解決の論点として保留している。
+#
+# なお child_types にエイリアス同士を併記しても、atomcraft_get_tree 側が
+# 子UUIDで重複排除するため実害は出ない(0.2.6以降)。この辞書は将来
+# find_all_by_type 等で必要になったときのためのデータとして保持する。
 OBJECT_TYPE_ALIASES: dict[str, str] = {
-    "Waveform": "Material",  # 152件が一致
+    "Waveform": "Material",  # 実機3.57.02で152件、3.56.01(LE)で5件が一致
     "LanguageSettingFolder": "LanguageSettingsFolder",  # 単数形/複数形
-    # AutomationPoint は公式リストにある正式な型だが、実機では AisacPoint と
-    # 同一集合(454件)を返す。OBJECT_TYPES には公式どおり残してある。
-    "AutomationPoint": "AisacPoint",
+    "AutomationPoint": "AisacPoint",  # 3.57.02で454件、3.56.01(LE)で14件が一致
+    "CueSheetSubFolder": "CueSheetFolder",  # 3.56.01(LE)で同一UUIDを確認
 }
 
 # INVALID_TYPE時のヒントで、近似候補が1件も出なかった場合に示す代表例。
