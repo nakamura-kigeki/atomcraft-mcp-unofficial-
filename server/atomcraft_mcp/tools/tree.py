@@ -24,7 +24,7 @@ import time
 from datetime import datetime
 from typing import Optional
 
-from ..envelope import infra_hint, make_error, make_success
+from ..envelope import classify, infra_hint, make_error, make_success
 from ..transport import READ
 
 _MAX_TOTAL_CALLS = 5000
@@ -168,6 +168,16 @@ def make_tools(t, settings):
             data.csv — DuckDBでクエリ:
               SELECT * FROM read_csv_auto('data.csv') WHERE parent_path LIKE '%attack%' ORDER BY CAST(CueID AS INT)
 
+        返却値の注意:
+          data.invalid_child_types — child_types のうち**無効な型名だったもの**の一覧。
+            空でなければ、その型は検索すらされていない(「その型の子が0件だった」のでは
+            ない)。走査自体は続行し、有効な型の子要素は通常どおり取得する。
+            **`partial` は無効型があってもFalseのままなので、走査が完全だったかを
+            判断するときは partial だけでなく invalid_child_types も必ず確認すること。**
+            (partial は timed_out / truncated / インフラエラーによる「途中で止まった」を
+            表す既存の意味を保つ。型名ミスは走査の中断ではないため混ぜない。)
+            warnings にも同じ内容が1行入る。
+
         --- Task 11での変更点 ---
         - JSONレスポンスの形は data={"tree": ..., "timed_out": bool, "truncated": bool}
           （破壊的変更: 旧形式はtreeが直接data直下だった）
@@ -202,7 +212,7 @@ def make_tools(t, settings):
         csv_rows = []
 
         _state = {"timed_out": False, "truncated": False, "call_count": 0, "budget_tripped": False,
-                   "infra_code": None}
+                   "infra_code": None, "invalid_child_types": []}
 
         def _call(func, *args):
             _state["call_count"] += 1
@@ -294,6 +304,14 @@ def make_tools(t, settings):
                         if len(child_ids) > max_children:
                             _state["truncated"] = True
                         all_children.extend(child_ids[:max_children])
+                elif classify(child_result.get("message", "")).code == "INVALID_TYPE":
+                    # 無効な型名は「その型の子が0件」と区別できないまま黙って捨てられると、
+                    # 呼び出し側が「網羅できた」と誤認する。走査は続けつつ(supersetを投げて
+                    # 使える型だけ拾う呼び出し方はバージョン差の吸収として正当)、
+                    # 型名を集めてレスポンスで必ず通知する。
+                    # 同じ型が全ノードで失敗するため、ここで重複排除する。
+                    if ctype not in _state["invalid_child_types"]:
+                        _state["invalid_child_types"].append(ctype)
             return all_children
 
         def _build_node(obj_id: str, depth: int, parent_path: str = "") -> dict:
@@ -369,10 +387,19 @@ def make_tools(t, settings):
                 row[f] = properties.get(f, "")
             csv_rows.append(row)
 
-        def _budget_warning() -> list:
+        def _warnings() -> list:
+            """予算超過と無効child_typesの警告をまとめて返す。"""
+            out = []
             if _state["budget_tripped"]:
-                return [f"API call budget ({_MAX_TOTAL_CALLS}) exceeded; traversal stopped early."]
-            return []
+                out.append(f"API call budget ({_MAX_TOTAL_CALLS}) exceeded; traversal stopped early.")
+            if _state["invalid_child_types"]:
+                names = ", ".join(_state["invalid_child_types"])
+                out.append(
+                    f"child_types のうち {names} は無効な型名のため検索されませんでした"
+                    "(その型のオブジェクトが0件だったのではありません)。"
+                    "有効な型名は docs/dev/CAPABILITIES.md または"
+                    "atomcraft_get_object のobject_type例を参照してください。")
+            return out
 
         def _is_partial() -> bool:
             return bool(_state["timed_out"] or _state["truncated"] or _state["infra_code"])
@@ -419,9 +446,10 @@ def make_tools(t, settings):
                         "timed_out": _state["timed_out"],
                         "truncated": _state["truncated"],
                         "partial": _is_partial(),
+                        "invalid_child_types": list(_state["invalid_child_types"]),
                     },
                     message=f"Exported: {len(csv_rows)} data rows to CSV, structure to JSON{infra_suffix}",
-                    warnings=_budget_warning() or None,
+                    warnings=_warnings() or None,
                 )
             else:
                 tree = _build_node(root, 0)
@@ -454,9 +482,10 @@ def make_tools(t, settings):
                             "truncated": _state["truncated"],
                             "auto_fallback": True,
                             "partial": _is_partial(),
+                            "invalid_child_types": list(_state["invalid_child_types"]),
                         },
                         message=fallback_message,
-                        warnings=_budget_warning() or None,
+                        warnings=_warnings() or None,
                     )
 
                 return make_success(
@@ -465,9 +494,10 @@ def make_tools(t, settings):
                         "timed_out": _state["timed_out"],
                         "truncated": _state["truncated"],
                         "partial": _is_partial(),
+                        "invalid_child_types": list(_state["invalid_child_types"]),
                     },
                     message=_infra_message_suffix(),
-                    warnings=_budget_warning() or None,
+                    warnings=_warnings() or None,
                 )
         except Exception as e:
             return make_error(f"Tree traversal failed: {str(e)}", "API_ERROR")

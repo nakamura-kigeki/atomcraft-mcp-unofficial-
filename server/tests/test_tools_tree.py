@@ -363,3 +363,76 @@ def test_csv_first_call_infra_failure_returns_error_not_success(tmp_path, fake_r
     # CSVファイルが作成されていないことを確認
     csv_files = list(tmp_path.glob("tree_data_*.csv"))
     assert len(csv_files) == 0
+
+
+# --- 無効なchild_typesの通知(v0.2.5で追加) ---
+
+def _tree_with_invalid_type_handlers(fake_robot):
+    """Track(有効・2件) と BogusTypeXYZ(INVALID_TYPE) を混ぜた木を返すfakeを組む。
+
+    ルート配下にTrackが2つあり、その各Trackでも同じ型で子を引きにいくため、
+    BogusTypeXYZ の失敗は複数ノードで繰り返し発生する(重複排除の検証用)。
+    """
+    def get_child_objects(parent, object_type):
+        if object_type == "BogusTypeXYZ":
+            return {"succeed": False,
+                    "message": "指定したタイプ [BogusTypeXYZ] は現在利用できません。"}
+        if object_type == "Track" and parent == "root":
+            return {"succeed": True, "data": ["t1", "t2"], "message": ""}
+        return {"succeed": True, "data": [], "message": ""}
+
+    fake_robot.set_handler("project", "get_child_objects", get_child_objects)
+    fake_robot.set_handler("project", "get_type_name",
+                           {"succeed": True, "data": "Track", "message": ""})
+    fake_robot.set_handler("project", "get_object_path",
+                           {"succeed": True, "data": "/WU/CueSheet/Cue", "message": ""})
+    fake_robot.set_handler("project", "get_value",
+                           {"succeed": True, "data": "name", "message": ""})
+    return _make_tools(fake_robot)
+
+
+def test_invalid_child_type_is_reported_while_valid_ones_are_collected(fake_robot):
+    fns = _tree_with_invalid_type_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root", child_types=["Track", "BogusTypeXYZ"], fields=["Name"]))
+
+    assert r["success"] is True
+    # 有効な型の子は通常どおり取得できる
+    assert r["data"]["tree"]["child_count"] == 2
+    # 無効な型は明示的に報告される
+    assert r["data"]["invalid_child_types"] == ["BogusTypeXYZ"]
+    assert any("BogusTypeXYZ" in w for w in r["warnings"])
+
+
+def test_invalid_child_type_is_reported_only_once(fake_robot):
+    """同じ無効型が複数ノードで失敗しても報告は1回にまとめる(警告のノイズ化を防ぐ)"""
+    fns = _tree_with_invalid_type_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root", child_types=["Track", "BogusTypeXYZ"], fields=["Name"]))
+
+    assert r["data"]["invalid_child_types"].count("BogusTypeXYZ") == 1
+    assert len([w for w in r["warnings"] if "BogusTypeXYZ" in w]) == 1
+
+
+def test_all_valid_child_types_report_empty_list(fake_robot):
+    """全部有効なときは空。既存の正常系レスポンスを壊していないことの確認"""
+    fns = _tree_with_invalid_type_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root", child_types=["Track"], fields=["Name"]))
+
+    assert r["success"] is True
+    assert r["data"]["invalid_child_types"] == []
+    assert r["data"]["partial"] is False
+    assert not r.get("warnings")
+
+
+def test_invalid_child_type_reported_in_csv_mode(fake_robot, tmp_path):
+    """csv出力経路でも情報が失われないこと"""
+    fns = _tree_with_invalid_type_handlers(fake_robot)
+    r = json.loads(fns["atomcraft_get_tree"](
+        root="root", child_types=["Track", "BogusTypeXYZ"], fields=["Name"],
+        output_format="csv", output_dir=str(tmp_path)))
+
+    assert r["success"] is True
+    assert r["data"]["invalid_child_types"] == ["BogusTypeXYZ"]
+    assert any("BogusTypeXYZ" in w for w in r["warnings"])

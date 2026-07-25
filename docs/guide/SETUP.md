@@ -101,3 +101,17 @@ atomcraftにpingして
 「Connection alive(接続は生きています)」という趣旨の結果が返ってくれば、セットアップ完了です。ついでに「Atom Craftのバージョンを取得して」と頼むと、接続先のバージョン(例: Ver.3.57.02)が返ってきて、正しいAtom Craftにつながっていることまで確認できます。
 
 次は [USING.md](USING.md) で実際の頼み方を見てみましょう。**うまくいかない場合**は [FAQ.md](FAQ.md) へ。
+
+## あとで: 新しいバージョンに更新するとき
+
+このツールは更新されることがあります。更新したくなったら、Claude Codeのチャット欄で
+`/plugin` と打ってメニューから更新するのが簡単です。コマンドで済ませたい場合は、
+ターミナルで次の2行を**この順番で**実行してください(Claudeに頼んでもOKです)。
+
+```
+claude plugin marketplace update atomcraft-mcp-marketplace
+claude plugin update atomcraft-mcp@atomcraft-mcp-marketplace
+```
+
+**更新後はClaude Codeを一度閉じて開き直してください**(開いたままだと反映されません)。
+入れ直し(アンインストール→再インストール)は不要です。
