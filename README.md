@@ -1,4 +1,6 @@
-# CRI Atom Craft MCP
+# CRI Atom Craft MCP (非公式)
+
+> **本プロジェクトは非公式です。** CRI・ミドルウェア株式会社による公式製品ではなく、同社とは無関係です。詳細は末尾の[免責事項](#免責事項)を参照してください。
 
 CRI Atom Craft のサウンドオーサリング操作(キューシート作成・マテリアル登録・ミキサー設定・ビルド等)を、LLMエージェントからMCP(Model Context Protocol)経由でリモート操作できるようにするサーバーです。
 Atom Craft付属のRobot Python APIを薄くラップし、21個のMCPツールとして公開します。

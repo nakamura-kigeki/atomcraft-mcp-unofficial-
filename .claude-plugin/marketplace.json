@@ -1,7 +1,8 @@
 {
   "name": "atomcraft-mcp-marketplace",
   "owner": { "name": "nakamura-kigeki" },
+  "description": "【非公式 / Unofficial】CRI Atom Craft 向けMCPプラグインの配布元。CRI・ミドルウェア株式会社とは無関係です (Not affiliated with CRI Middleware Co., Ltd.)",
   "plugins": [
-    { "name": "atomcraft-mcp", "source": "./", "description": "CRI Atom Craft MCP server + CRI docs search skill" }
+    { "name": "atomcraft-mcp", "source": "./", "description": "【非公式 / Unofficial】CRI Atom Craft MCPサーバー + CRIドキュメント検索スキル。CRI・ミドルウェア株式会社とは無関係です (Not affiliated with CRI Middleware Co., Ltd.)" }
   ]
 }

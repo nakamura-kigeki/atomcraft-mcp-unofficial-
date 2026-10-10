@@ -19,9 +19,10 @@ transport = AtomCraftTransport(api, settings)
 atexit.register(transport.finalize)
 
 mcp = FastMCP(
-    name="CRI Atom Craft Robot",
+    name="CRI Atom Craft MCP (非公式)",
     instructions=(
-        "CRI Atom Craft のサウンドオーサリングツールをリモート操作するMCPサーバーです。\n"
+        "CRI Atom Craft のサウンドオーサリングツールをリモート操作する非公式のMCPサーバーです"
+        "(CRI・ミドルウェア株式会社とは無関係)。\n"
         "使用前に CRI Atom Craft を起動し、スクリプトメニュー > サーバー > スクリプトサーバーを起動 してください。\n"
         "オブジェクトはUUID文字列で識別されます。まず atomcraft_debug(action='ping') で接続確認してください。\n"
         "エラー時は code / hint / retryable を確認: retryable=true なら再実行可、"
