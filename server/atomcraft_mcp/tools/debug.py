@@ -1,10 +1,7 @@
 """デバッグ・診断ツール: atomcraft_debug
 
-legacy/server.py:954-1032 の変換版。
-
-action="reconnect"はlegacyの `conn.disconnect(); conn._connected = False; conn.connect()`
-ハックを `t.full_reset()` → `t.connect()` → pingでの再接続確認に置き換えている。
-action="status"はtransportのstatus()（dll_status込みの新形式）をそのまま返す。
+action="reconnect"は `t.full_reset()` → `t.connect()` を行い、pingで再接続を確認する。
+action="status"はtransportのstatus()（dll_statusを含む）をそのまま返す。
 """
 from typing import Literal, Optional
 

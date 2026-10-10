@@ -1,7 +1,5 @@
 """音声ファイル(マテリアル)の登録・情報取得ツール: atomcraft_manage_material
 
-legacy/server.py:399-453 の変換版。
-
 action="register" の失敗は envelope.classify の既存パターン
 （"マテリアルの登録に失敗しました" → ALREADY_EXISTS）でそのまま分類される。
 """

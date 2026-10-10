@@ -1,8 +1,4 @@
-"""オブジェクトのCRUDツール: get_object / create_object / modify_object
-
-legacy/server.py:58-236 (atomcraft_get_object, atomcraft_create_object,
-atomcraft_modify_object) の変換版。
-"""
+"""オブジェクトのCRUDツール: get_object / create_object / modify_object"""
 import json as _json
 from typing import Literal, Optional
 

@@ -1,11 +1,8 @@
 """プロパティ読み取り・書き込みツール: get_property / set_property / manage_category
 
-legacy/server.py:243-392 (atomcraft_get_property, atomcraft_set_property,
-atomcraft_manage_category) の変換版。
-
 get_propertyは部分成功アルゴリズムを実装する: get_valuesがINVALID_FIELDで失敗した場合、
 無効フィールドを除外して再試行を繰り返し、1件でも取得できれば成功として返す
-（実測エラー1位「フィールド1つのtypoで全滅」の根絶）。
+（フィールド名を1つ間違えただけで全体が失敗するのを防ぐため）。
 """
 from typing import Literal, Optional
 

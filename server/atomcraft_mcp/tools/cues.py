@@ -1,10 +1,7 @@
 """キュー作成・ブックマーク管理ツール: atomcraft_create_cue / atomcraft_manage_bookmark
 
-legacy/server.py:580-662 (atomcraft_manage_bookmark, atomcraft_create_cue) の変換版。
-
-manage_bookmarkのaction=listはlegacyでは{"ids": ...}を裸で返していたが、
-ブックマーク件数が多い場合の切り詰め安全性のためobjects.paginated_idsに合わせた
-（total/truncatedが付与される。ids配下の内容自体はlegacyと同一）。
+manage_bookmarkのaction=listは、ブックマーク件数が多い場合の切り詰め安全性のため
+objects.paginated_idsと同じ形式（idsに加えてtotal/truncated）で返す。
 """
 from typing import Literal, Optional
 

@@ -2,10 +2,7 @@
 atomcraft_manage_busmap / atomcraft_setup_aisac / atomcraft_setup_automation /
 atomcraft_setup_mixer
 
-legacy/server.py:529-573 (atomcraft_manage_busmap), 669-838 (atomcraft_setup_aisac,
-atomcraft_setup_automation, atomcraft_setup_mixer) の変換版。
-
-send_levelは0.0〜1.0の範囲チェックを追加している（legacyにはなかった新規ガード）。
+send_levelは0.0〜1.0の範囲外をAPI呼び出し前にINVALID_PARAMSで弾く。
 """
 from typing import Literal, Optional
 

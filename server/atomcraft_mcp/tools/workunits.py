@@ -1,8 +1,5 @@
 """ワークユニット管理・プロジェクトファイル操作ツール:
 atomcraft_manage_workunit / atomcraft_project_io
-
-legacy/server.py:460-522 (atomcraft_manage_workunit), 911-947 (atomcraft_project_io)
-の変換版。
 """
 from typing import Literal, Optional
 

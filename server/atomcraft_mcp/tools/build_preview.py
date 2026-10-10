@@ -1,8 +1,6 @@
 """ビルド・プレビューツール: atomcraft_build / atomcraft_preview
 
-legacy/server.py:845-904 の変換版。
-
-atomcraft_buildはlegacyにない新規引数timeout_secを公開する（NON_IDEMPOTENTかつ
+atomcraft_buildは引数timeout_secを公開する（NON_IDEMPOTENTかつ
 長時間かかり得るため、呼び出し側でtransportのデフォルトタイムアウトを上書きできるように
 している）。
 
