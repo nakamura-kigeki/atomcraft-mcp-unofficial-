@@ -90,10 +90,6 @@ MCPサーバーは起動時にAtom Craftへ接続しません(遅延接続)。�
 
 CRI Atom Craft、CRIWARE、CRI ADX、ADX2 は、CRI・ミドルウェア株式会社の商標または登録商標です。本リポジトリでは、対応する製品を示す目的でのみこれらの名称を使用しています。
 
-## リリース運用ルール
-
-リリース(マーケットプレイスへの公開更新)のたびに、`.claude-plugin/plugin.json` の `version` を必ず上げてください。Claude Codeのプラグイン更新はバージョン変更を手がかりに検知されるため、コード変更のみでversionを据え置くと、既存ユーザーの環境に更新が反映されません。
-
 ## ライセンス
 
 [MIT License](LICENSE)

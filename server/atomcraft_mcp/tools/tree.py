@@ -1,15 +1,11 @@
 """汎用ツリー展開ツール: atomcraft_get_tree
 
-legacy/server.py:1039-1297 (atomcraft_get_tree) の変換版。
-
-legacyからの主な変更差分（brief内の番号に対応）:
-  1. output_dir省略時のデフォルトが settings.output_base_dir（%TEMP%\\atomcraft_mcp）になった
-     （mcp-serverディレクトリへの出力は廃止）
+主な仕様:
+  1. output_dir省略時は settings.output_base_dir（%TEMP%\\atomcraft_mcp）に出力する
   2. output_format="json" で構築したツリーが settings.tree_json_budget を超える場合、
      APIを再呼び出しせずメモリ上のツリーをCSV行＋構造JSONに変換し（_tree_to_rows）、
      CSVモードと同形式のレスポンス＋auto_fallback=Trueで返す
   3. JSONレスポンスの形は data={"tree": ..., "timed_out": ..., "truncated": ...}
-     （破壊的変更: 旧形式はtreeが直接data直下だった）
   4. max_depthは0-50、max_childrenは1-10000の範囲外はAPI呼び出し前にINVALID_PARAMS
   5. API呼び出し回数が5000回を超えたら走査を打ち切りtruncated=Trueにする（安全弁）
   6. CSV/構造JSON書き出し前に、出力先ディレクトリの古い tree_data_*.csv /
@@ -181,9 +177,8 @@ def make_tools(t, settings):
             表す既存の意味を保つ。型名ミスは走査の中断ではないため混ぜない。)
             warnings にも同じ内容が1行入る。
 
-        --- Task 11での変更点 ---
+        出力・引数の制約:
         - JSONレスポンスの形は data={"tree": ..., "timed_out": bool, "truncated": bool}
-          （破壊的変更: 旧形式はtreeが直接data直下だった）
         - json.dumps(tree) が settings.tree_json_budget 文字を超えると、APIを再呼び出しせず
           メモリ上のツリーをCSV+構造JSONに自動変換して書き出す（data.auto_fallback=True）
         - output_dir省略時は settings.output_base_dir（%TEMP%\\atomcraft_mcp）に出力する

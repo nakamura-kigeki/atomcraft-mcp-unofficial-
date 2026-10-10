@@ -6,8 +6,8 @@
 - preview モジュール: `get_playback_state` / `start_ingame_preview` / `stop_ingame_preview`
 - project モジュール: `create_beatsync` / `create_beatsync_track` / `get_value_from_targets` / `set_value_to_targets`
 
-この文書は Task 4〜6 が最初から使う `MIN_VER` 定数の根拠を確定するためのもの。
-仮値運用はしない。未確定の項目は「確度: 推定」と明記した上で、安全側（低め）の値を採用する。
+この文書は、上記7関数を使うツールのバージョンゲート(`MIN_VER` 定数)に採用した値の根拠をまとめたもの。
+初出バージョンを確定できなかった項目は「確度: 推定」と明記した上で、安全側（低め）の値を採用している。
 
 ## 出典
 

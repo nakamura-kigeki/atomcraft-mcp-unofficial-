@@ -20,8 +20,7 @@ atomcraft_mcp のツール関数を MCP を介さず直接呼び出し、新旧A
   (切断せずにプロセスを終了すると、スクリプトサーバー側が旧クライアント接続を
   握ったままになり、次回起動時のping接続が失敗し続けることがある)
 
-このスクリプトはリポジトリにコミットされる成果物のため、個人パスやNG語を
-コード内に直接書かない。robot-path の解決は atomcraft_mcp.robot と同じ
+robot-path の解決は atomcraft_mcp.robot と同じ
 resolve_robot_path / robot.load をそのまま再利用する。
 """
 import json
