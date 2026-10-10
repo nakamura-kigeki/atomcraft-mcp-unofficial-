@@ -1,7 +1,7 @@
 {
   "name": "atomcraft-mcp",
   "displayName": "CRI Atom Craft MCP (非公式)",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "【非公式】CRI Atom Craft をLLMからリモート操作するMCPサーバー + CRIWAREドキュメント検索スキル。CRI・ミドルウェア株式会社による公式製品ではなく、同社とは無関係です。",
   "author": { "name": "nakamura-kigeki" },
   "mcpServers": "./.mcp.json"
