@@ -130,3 +130,115 @@ def test_tool_version_missing_attribute_fails_open(transport, fake_robot):
     assert transport.tool_version() is None
     # インフラ呼び出し自体が発生していないこと(属性チェックの時点で打ち切られる)
     assert all(c[1] != "get_tool_version" for c in fake_robot.call_log)
+
+
+# --- DLL呼び出しの直列化(_call_lock) ---
+# DLLはスレッドセーフではなく、FastMCPは同期関数のツールをスレッドプールで並行実行する。
+# ツールが並列に呼ばれても、DLLに同時に入る呼び出しが常に1つであることを保証する。
+
+import threading
+
+
+def test_concurrent_calls_never_overlap_in_dll(transport, fake_robot):
+    state = {"active": 0, "max_active": 0}
+    guard = threading.Lock()
+
+    def tracked(*args):
+        with guard:
+            state["active"] += 1
+            state["max_active"] = max(state["max_active"], state["active"])
+        time.sleep(0.05)
+        with guard:
+            state["active"] -= 1
+        return {"succeed": True, "data": "x", "message": ""}
+
+    fake_robot.set_handler("project", "get_value", tracked)
+    results = []
+    threads = [
+        threading.Thread(target=lambda: results.append(
+            transport.call(fake_robot.project.get_value, "u", "Name", idempotency=READ)))
+        for _ in range(8)
+    ]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join(timeout=10)
+    assert not any(th.is_alive() for th in threads)
+    assert len(results) == 8 and all(r["succeed"] for r in results)
+    assert state["max_active"] == 1
+
+
+def test_timeout_releases_lock_for_waiting_call(transport, fake_robot):
+    """先行呼び出しがタイムアウトしても、待っていた別スレッドの呼び出しが固まらない。"""
+    first_started = threading.Event()
+
+    def slow_then_fast(*args):
+        if not first_started.is_set():
+            first_started.set()
+            time.sleep(1.0)  # timeout(0.2)を超えて居座る(停止できないDLL呼び出しの再現)
+        return {"succeed": True, "data": None, "message": ""}
+
+    fake_robot.set_handler("debug", "ping", slow_then_fast)
+    out = {}
+    a = threading.Thread(target=lambda: out.__setitem__("a", transport.call(
+        fake_robot.debug.ping, idempotency=NON_IDEMPOTENT, timeout=0.2)))
+    a.start()
+    assert first_started.wait(timeout=5)
+    b = threading.Thread(target=lambda: out.__setitem__("b", transport.call(
+        fake_robot.debug.ping, idempotency=READ, timeout=2)))
+    b.start()
+    a.join(timeout=5)
+    b.join(timeout=5)
+    assert not a.is_alive() and not b.is_alive()
+    assert out["a"]["_code"] == "UNKNOWN_OUTCOME"
+    assert out["b"]["succeed"] is True
+
+
+def test_finalize_does_not_hang_when_lock_is_held(transport, fake_robot, monkeypatch):
+    """終了処理(atexit)は、ロックが握られたままでも上限時間内に戻る。"""
+    import atomcraft_mcp.transport as tr
+    monkeypatch.setattr(tr, "_FINALIZE_LOCK_TIMEOUT", 0.2)
+    transport.connect()
+    holding, release = threading.Event(), threading.Event()
+
+    def hold():
+        with transport._call_lock:
+            holding.set()
+            release.wait(timeout=5)
+
+    h = threading.Thread(target=hold)
+    h.start()
+    assert holding.wait(timeout=5)
+    t0 = time.monotonic()
+    transport.finalize()
+    elapsed = time.monotonic() - t0
+    release.set()
+    h.join(timeout=5)
+    assert elapsed < 2
+    assert fake_robot.connectlib.connected is False  # ロックが取れなくても切断は試みる
+
+
+def test_status_returns_quickly_and_keeps_shape_while_busy(transport, fake_robot, monkeypatch):
+    """他の呼び出しの実行中でも status はすぐ返り、応答のキー構成は変わらない。"""
+    import atomcraft_mcp.transport as tr
+    monkeypatch.setattr(tr, "_STATUS_LOCK_TIMEOUT", 0.1)
+    holding, release = threading.Event(), threading.Event()
+
+    def hold():
+        with transport._call_lock:
+            holding.set()
+            release.wait(timeout=5)
+
+    h = threading.Thread(target=hold)
+    h.start()
+    assert holding.wait(timeout=5)
+    t0 = time.monotonic()
+    s = transport.status()
+    elapsed = time.monotonic() - t0
+    release.set()
+    h.join(timeout=5)
+    assert elapsed < 1
+    assert set(s.keys()) == {"host", "port", "initialized", "connected", "dll_status"}
+    assert s["dll_status"] is None
+    # ロックが空いていれば通常どおりDLLの状態を返す
+    assert transport.status()["dll_status"] == fake_robot.connectlib.status_value

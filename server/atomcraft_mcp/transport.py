@@ -4,6 +4,9 @@
 - タイムアウト時はDLLをfull_reset（finalize→initialize）し、世代カウンタで
   旧スレッドの遅延書き込みを破棄する（非スレッドセーフDLLの並行アクセス防止）
 - 非冪等操作の結果不明は UNKNOWN_OUTCOME として呼び出し側に確認を促す
+- DLLに触る経路(call/connect/disconnect/full_reset/status)はすべて _call_lock で
+  直列化する。DLLはスレッドセーフではなく、FastMCPは同期関数のツールを
+  スレッドプールで並行実行するため、ツールが並列に呼ばれてもDLLへの同時アクセスを防ぐ
 """
 import logging
 import threading
@@ -21,6 +24,11 @@ _RETRYABLE_INFRA = {"PARSE_ERROR", "CONNECTION_LOST", "TIMEOUT"}
 
 _UNSET = object()  # tool_versionキャッシュ未取得の番人。Noneは「取得失敗」を意味するため区別する
 
+# 終了処理・状態取得で _call_lock を待つ上限(秒)。実行中の呼び出しがロックを
+# 握ったまま固まっていても、プロセス終了や診断をハングさせないための安全弁。
+_FINALIZE_LOCK_TIMEOUT = 5.0
+_STATUS_LOCK_TIMEOUT = 1.0
+
 
 class AtomCraftTransport:
     def __init__(self, robot, settings):
@@ -31,7 +39,12 @@ class AtomCraftTransport:
         self._initialized = False
         self._connected = False
         self._generation = 0
-        self._lock = threading.Lock()
+        self._lock = threading.Lock()  # 世代カウンタと結果受け渡し専用(短時間しか保持しない)
+        # DLL呼び出しの直列化用。call() の中から connect()/reset()/full_reset() を
+        # 呼ぶため再入可能な RLock にする。ロック順は常に _call_lock → _lock。
+        # _attempt 内の _worker スレッドはこのロックを取ってはならない
+        # (呼び出し元スレッドが保持したまま join で待つため、取るとデッドロックする)。
+        self._call_lock = threading.RLock()
         self._tool_version_cache = _UNSET
         self._UNSET = _UNSET  # インスタンス経由でも番人にアクセスできるようにする(テスト用)
 
@@ -47,19 +60,24 @@ class AtomCraftTransport:
         return True
 
     def connect(self) -> bool:
-        if not self._initialize():
-            return False
-        if self._robot.connectlib.connect(self.host, self.port) != 0:
-            logger.error("connect to %s:%d failed", self.host, self.port)
-            return False
-        self._connected = True
-        self._tool_version_cache = _UNSET  # 再接続・別バージョン接続でのキャッシュ残留防止
-        return True
+        with self._call_lock:
+            if not self._initialize():
+                return False
+            if self._robot.connectlib.connect(self.host, self.port) != 0:
+                logger.error("connect to %s:%d failed", self.host, self.port)
+                return False
+            self._connected = True
+            self._tool_version_cache = _UNSET  # 再接続・別バージョン接続でのキャッシュ残留防止
+            return True
 
-    def disconnect(self):
+    def _disconnect_unlocked(self):
         if self._connected:
             self._robot.connectlib.disconnect()
             self._connected = False
+
+    def disconnect(self):
+        with self._call_lock:
+            self._disconnect_unlocked()
 
     def reset(self):
         """公開リセット（旧 conn._connected=False ハックの置き換え）"""
@@ -68,12 +86,11 @@ class AtomCraftTransport:
         except Exception:
             self._connected = False
 
-    def full_reset(self):
-        """DLLレベルの完全リセット。タイムアウト後の健全化に使う"""
+    def _full_reset_unlocked(self):
         with self._lock:
             self._generation += 1
         try:
-            self.disconnect()
+            self._disconnect_unlocked()
             if self._initialized:
                 self._robot.connectlib.finalize()
         except Exception:
@@ -82,8 +99,20 @@ class AtomCraftTransport:
         self._connected = False
         self._tool_version_cache = _UNSET  # 再起動・別バージョン接続でのキャッシュ残留防止
 
+    def full_reset(self):
+        """DLLレベルの完全リセット。タイムアウト後の健全化に使う"""
+        with self._call_lock:
+            self._full_reset_unlocked()
+
     def finalize(self):
-        self.full_reset()
+        """プロセス終了時の後始末(atexit)。ロックを待つのは上限付きで、取れなくても
+        切断は試みる。終了時に固まった呼び出しがあってもプロセス終了をハングさせない。"""
+        acquired = self._call_lock.acquire(timeout=_FINALIZE_LOCK_TIMEOUT)
+        try:
+            self._full_reset_unlocked()
+        finally:
+            if acquired:
+                self._call_lock.release()
 
     def tool_version(self):
         """接続先ツールのバージョンtuple。取得失敗はNoneをキャッシュ(接続リセットで無効化)"""
@@ -107,11 +136,16 @@ class AtomCraftTransport:
         return self._connected
 
     def status(self) -> dict:
+        """接続状態。他の呼び出しの実行中で _call_lock を短時間で取れない場合は、
+        DLLに触らず dll_status=None を返す(取得失敗時と同じ扱い)。"""
         dll_status = None
-        try:
-            dll_status = self._robot.connectlib.get_status()
-        except Exception:
-            pass
+        if self._call_lock.acquire(timeout=_STATUS_LOCK_TIMEOUT):
+            try:
+                dll_status = self._robot.connectlib.get_status()
+            except Exception:
+                pass
+            finally:
+                self._call_lock.release()
         return {"host": self.host, "port": self.port,
                 "initialized": self._initialized, "connected": self._connected,
                 "dll_status": dll_status}
@@ -166,6 +200,11 @@ class AtomCraftTransport:
     def call(self, func, *args, idempotency: str = READ, timeout: float = None) -> dict:
         if timeout is None:
             timeout = self._default_timeout
+        # 接続確認から再試行までを1単位として直列化する(他スレッドの呼び出しは待たされる)
+        with self._call_lock:
+            return self._call_unlocked(func, args, idempotency, timeout)
+
+    def _call_unlocked(self, func, args, idempotency: str, timeout: float) -> dict:
         if not self._connected:
             if not self.connect():
                 return {"succeed": False, "_code": "SERVER_UNREACHABLE",
